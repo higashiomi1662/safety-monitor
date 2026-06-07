@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 
-  <!-- PWA対応 -->
-  <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIuWuieWFqOihm+eUn+ODouODi+OCv+ODvCAtIOadsei/keaxn+ijveS9nOaJgCIsCiAgInNob3J0X25hbWUiOiAi5a6J5YWo6KGb55SfIiwKICAiZGVzY3JpcHRpb24iOiAi5p2x6L+R5rGf6KO95L2c5omAIOWuieWFqOihm+eUn+ODouODi+OCv+ODquODs+OCsOOCt+OCueODhuODoCIsCiAgInN0YXJ0X3VybCI6ICIvc2FmZXR5LW1vbml0b3IvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMUMxQzFFIiwKICAidGhlbWVfY29sb3IiOiAiIzBBODRGRiIsCiAgIm9yaWVudGF0aW9uIjogImxhbmRzY2FwZSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgMTkyIDE5MiclM0UlM0NyZWN0IHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyByeD0nMjAnIGZpbGw9JyUyMzFDMUMxRScvJTNFJTNDdGV4dCB4PSc5NicgeT0nMTMwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmb250LXNpemU9JzEyMCcgZmlsbD0nJTIzMEE4NEZGJyUzRfCfm6ElM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9LAogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgNTEyIDUxMiclM0UlM0NyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyByeD0nNTAnIGZpbGw9JyUyMzFDMUMxRScvJTNFJTNDdGV4dCB4PScyNTYnIHk9JzM2MCcgdGV4dC1hbmNob3I9J21pZGRsZScgZm9udC1zaXplPSczMjAnIGZpbGw9JyUyMzBBODRGRiclM0Xwn5uhJTNDL3RleHQlM0UlM0Mvc3ZnJTNFIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
+  <!-- PWA -->
+  <link rel="manifest" href="/safety-monitor/manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="安全衛生">
   <meta name="theme-color" content="#0A84FF">
-  <meta name="application-name" content="安全衛生モニター">
+  <link rel="apple-touch-icon" href="/safety-monitor/icon-192.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>安全衛生モニター</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -6774,24 +6774,12 @@ load(); applyColors(); renderDisplay(); applyPinPage(); if(!isPinned) resetSlide
 <textarea id="a-departments" style="display:none"></textarea>
 
 <script>
-// Service Worker登録（PWAオフライン対応）
 if ('serviceWorker' in navigator) {
-  const swCode = `
-    const CACHE = 'safety-monitor-v1';
-    self.addEventListener('install', e => {
-      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/safety-monitor/'])));
-    });
-    self.addEventListener('fetch', e => {
-      e.respondWith(
-        caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('/safety-monitor/')))
-      );
-    });
-  `;
-  const blob = new Blob([swCode], {type: 'application/javascript'});
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl, {scope: '/safety-monitor/'})
-    .then(() => console.log('SW登録完了'))
-    .catch(e => console.log('SW登録失敗:', e));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/safety-monitor/sw.js', {scope: '/safety-monitor/'})
+      .then(reg => console.log('SW登録完了:', reg.scope))
+      .catch(err => console.log('SW登録失敗:', err));
+  });
 }
 </script>
 
