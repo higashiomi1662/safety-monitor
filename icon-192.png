@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="24" fill="#1C1C1E"/>
+  <rect x="8" y="8" width="176" height="176" rx="20" fill="#0A84FF" opacity="0.15"/>
+  <text x="96" y="135" text-anchor="middle" font-size="110" font-family="sans-serif">🛡</text>
+  <text x="96" y="175" text-anchor="middle" font-size="16" fill="#0A84FF" font-family="sans-serif" font-weight="bold">安全衛生</text>
+</svg>
