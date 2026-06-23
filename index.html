@@ -1662,13 +1662,21 @@ function doGet(e) {
     <p style="font-size:12px;color:var(--sub);margin-bottom:20px;line-height:1.6;">法令に基づく保管用記録として、各種データをCSV/Excel形式でダウンロードできます。<br>ダウンロード後、Google ドライブまたは社内サーバーに保存してください。</p>
 
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-      <!-- 設備点検 -->
+      <!-- 設備点検（始業前＋月次 全履歴） -->
       <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-size:14px;font-weight:700;">🔧 設備点検記録</div>
+          <div style="font-size:14px;font-weight:700;">🔧 設備点検記録（全履歴）</div>
           <div style="font-size:11px;color:var(--sub);">保管義務：3年（安衛則§135の2）</div>
         </div>
         <button onclick="exportCSV('insp')" style="background:#30D158;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
+      </div>
+      <!-- 月次点検のみ -->
+      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:14px;font-weight:700;">📅 月次点検記録</div>
+          <div style="font-size:11px;color:var(--sub);">月次点検のみを抽出・月別に保管</div>
+        </div>
+        <button onclick="exportCSV('insp_monthly')" style="background:#30D158;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- フォークリフト -->
       <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
@@ -6113,27 +6121,33 @@ function submitInsp() {
     lastInspType: currentInspTab
   };
 
-  // 月次点検履歴を追記保存（点検内容・点検結果を項目別に記録）
+  // 点検履歴を追記保存（点検内容・点検結果を項目別に記録、タブごとに分離）
   if (!D.inspectionHistory) D.inspectionHistory = [];
   const dailyLabels   = p.dailyCheckpoints   || [];
   const monthlyLabels = p.monthlyCheckpoints || [];
   const items = [];
-  inspDailyCpState.forEach((st, i) => {
-    if (dailyLabels[i]) items.push({ label: dailyLabels[i], result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
-  });
-  inspMonthlyCpState.forEach((st, i) => {
-    if (monthlyLabels[i]) items.push({ label: monthlyLabels[i], result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
-  });
-  inspS3State.forEach((st, i) => {
-    const s3Labels = ['整理','整頓','清掃'];
-    if (s3Labels[i]) items.push({ label: '3S-' + s3Labels[i], result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
-  });
+  if (currentInspTab === 'daily') {
+    inspDailyCpState.forEach((st, i) => {
+      if (dailyLabels[i]) items.push({ label: dailyLabels[i], result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
+    });
+  } else if (currentInspTab === 'monthly') {
+    monthlyLabels.forEach((lbl, i) => {
+      const st = inspMonthlyCpState[i];
+      if (lbl) items.push({ label: lbl, result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
+    });
+    // 月次点検時は3Sチェックも併せて記録
+    inspS3State.forEach((st, i) => {
+      const s3Labels = ['整理','整頓','清掃'];
+      if (s3Labels[i]) items.push({ label: '3S-' + s3Labels[i], result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
+    });
+  }
   D.inspectionHistory.push({
     date: todayStr,
     equipName: p.name,
     reporter: reporter,
     dept: dept,
     inspType: currentInspTab === 'daily' ? '始業前点検' : '月次点検',
+    yearMonth: todayStr.slice(0,7),
     items: items,
     overallStatus: newStatus === 'ok' ? '正常' : '異常あり',
     comment: hasNg ? comment : ''
@@ -6298,12 +6312,16 @@ function downloadCSV(filename, rows) {
 
 function exportCSV(type) {
   const today = new Date().toISOString().slice(0,10);
-  if (type === 'insp') {
-    // 設備点検記録（月次履歴：日付・点検者・点検内容・点検結果）
+  if (type === 'insp' || type === 'insp_monthly') {
+    // 設備点検記録（履歴：日付・点検者・点検内容・点検結果）
+    // type==='insp' → 始業前点検＋月次点検すべて／ type==='insp_monthly' → 月次点検のみ
     const rows = [
       ['日付','設備名','点検者','部署','点検種別','点検内容','点検結果','総合判定','コメント'],
     ];
-    (D.inspectionHistory||[]).forEach(h => {
+    const hist = (D.inspectionHistory||[]).filter(h =>
+      type === 'insp_monthly' ? h.inspType === '月次点検' : true
+    );
+    hist.forEach(h => {
       if (h.items && h.items.length > 0) {
         h.items.forEach((it, i) => {
           rows.push([
@@ -6317,7 +6335,8 @@ function exportCSV(type) {
         rows.push([h.date, h.equipName, h.reporter||'', h.dept||'', h.inspType, '', '', h.overallStatus, h.comment||'']);
       }
     });
-    downloadCSV(`設備点検記録_${today}.csv`, rows);
+    const fname = type === 'insp_monthly' ? `月次点検記録_${today}.csv` : `設備点検記録_${today}.csv`;
+    downloadCSV(fname, rows);
 
 
   } else if (type === 'ra') {
