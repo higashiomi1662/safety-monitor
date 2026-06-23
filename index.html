@@ -2926,6 +2926,7 @@ function persist() {
       const minimal = JSON.parse(JSON.stringify(D));
       if (minimal.patrolReports) minimal.patrolReports = minimal.patrolReports.slice(-10).map(r=>({...r,photos:[]}));
       if (minimal.nmReports) minimal.nmReports = minimal.nmReports.slice(-20).map(r=>({...r,photos:[]}));
+      if (minimal.inspectionHistory) minimal.inspectionHistory = minimal.inspectionHistory.slice(-200);
       localStorage.setItem('safety_data_v93', JSON.stringify(minimal));
     } catch(e2) {
       console.warn('localStorage quota exceeded:', e2);
@@ -6112,6 +6113,32 @@ function submitInsp() {
     lastInspType: currentInspTab
   };
 
+  // 月次点検履歴を追記保存（点検内容・点検結果を項目別に記録）
+  if (!D.inspectionHistory) D.inspectionHistory = [];
+  const dailyLabels   = p.dailyCheckpoints   || [];
+  const monthlyLabels = p.monthlyCheckpoints || [];
+  const items = [];
+  inspDailyCpState.forEach((st, i) => {
+    if (dailyLabels[i]) items.push({ label: dailyLabels[i], result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
+  });
+  inspMonthlyCpState.forEach((st, i) => {
+    if (monthlyLabels[i]) items.push({ label: monthlyLabels[i], result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
+  });
+  inspS3State.forEach((st, i) => {
+    const s3Labels = ['整理','整頓','清掃'];
+    if (s3Labels[i]) items.push({ label: '3S-' + s3Labels[i], result: st === 'ok' ? '正常' : st === 'ng' ? '異常' : '' });
+  });
+  D.inspectionHistory.push({
+    date: todayStr,
+    equipName: p.name,
+    reporter: reporter,
+    dept: dept,
+    inspType: currentInspTab === 'daily' ? '始業前点検' : '月次点検',
+    items: items,
+    overallStatus: newStatus === 'ok' ? '正常' : '異常あり',
+    comment: hasNg ? comment : ''
+  });
+
   persist(); applyColors(); renderDisplay();
   renderDailyList();
   showToast(p.status!=='ok' ? '⚠ 異常あり — 設備点検を記録しました' : '✓ 設備点検を記録しました');
@@ -6272,18 +6299,23 @@ function downloadCSV(filename, rows) {
 function exportCSV(type) {
   const today = new Date().toISOString().slice(0,10);
   if (type === 'insp') {
-    // 設備点検記録（実施履歴）
+    // 設備点検記録（月次履歴：日付・点検者・点検内容・点検結果）
     const rows = [
-      ['設備名','最終点検日','担当者','部署','状態','コメント','点検種別','月次CP結果'],
+      ['日付','設備名','点検者','部署','点検種別','点検内容','点検結果','総合判定','コメント'],
     ];
-    (D.inspections||[]).forEach(p => {
-      const cpRes = (p.lastMonthlyCpState||[]).join(' / ');
-      rows.push([
-        p.name, p.lastInspectedDate||'',
-        p.reporter||'', p.dept||'',
-        p.status==='ok'?'正常':p.status==='warn'?'要確認':'点検期日超過',
-        p.comment||'', p.lastInspType==='daily'?'始業前点検':'月次点検', cpRes
-      ]);
+    (D.inspectionHistory||[]).forEach(h => {
+      if (h.items && h.items.length > 0) {
+        h.items.forEach((it, i) => {
+          rows.push([
+            h.date, h.equipName, h.reporter||'', h.dept||'', h.inspType,
+            it.label, it.result,
+            i === 0 ? h.overallStatus : '',
+            i === 0 ? (h.comment||'') : ''
+          ]);
+        });
+      } else {
+        rows.push([h.date, h.equipName, h.reporter||'', h.dept||'', h.inspType, '', '', h.overallStatus, h.comment||'']);
+      }
     });
     downloadCSV(`設備点検記録_${today}.csv`, rows);
 
