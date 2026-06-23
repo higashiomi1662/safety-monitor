@@ -5947,7 +5947,6 @@ function openInspDetail(idx) {
   inspS3State = ['','',''];
   // reset worksite photo
   worksitePhotoData = '';
-  document.getElementById('worksite-photo-preview').innerHTML='';
   // abnormal section
   document.getElementById('insp-abn-section').classList.remove('show');
   document.getElementById('insp-comment').value = p.comment || '';
@@ -6027,20 +6026,12 @@ function set3sState(ci, state) {
 }
 
 function handleWorksitePhoto(files) {
-  const f = files[0]; if(!f||!f.type.startsWith('image/')) return;
-  const r = new FileReader();
-  r.onload = e => {
-    worksitePhotoData = e.target.result;
-    document.getElementById('worksite-photo-preview').innerHTML =
-      `<div class="nm-preview-item"><img src="${worksitePhotoData}"><button class="nm-preview-del" onclick="clearWorksitePhoto()">✕</button></div>`;
-    document.getElementById('worksite-drop-zone').style.borderColor='rgba(16,185,129,.6)';
-  };
-  r.readAsDataURL(f);
+  // 本日の作業場所写真セクションは削除済み（互換性のため関数のみ残す）
+  return;
 }
+
 function clearWorksitePhoto() {
   worksitePhotoData='';
-  document.getElementById('worksite-photo-preview').innerHTML='';
-  document.getElementById('worksite-drop-zone').style.borderColor='rgba(16,185,129,.4)';
 }
 
 
