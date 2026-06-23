@@ -1965,19 +1965,7 @@ function doGet(e) {
         </div>
       </div>
 
-      <!-- 本日の作業場所写真（3S確認用） 必須 -->
-      <div style="margin-top:14px">
-        <div style="font-size:15px;color:#10B981;letter-spacing:2px;font-weight:700;margin-bottom:8px">
-          📸 本日の作業場所写真 <span style="color:var(--accent);font-size:14px;font-weight:700">※必須 — 3S維持確認のため</span>
-        </div>
-        <div class="nm-photo-area" id="worksite-drop-zone" style="position:relative;border-color:rgba(16,185,129,.4)">
-          <input type="file" id="worksite-photo-input" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="handleWorksitePhoto(this.files)">
-          <div class="nm-photo-icon">🏭</div>
-          <div class="nm-photo-text">作業場所の写真を撮影・選択してください<br><small style="color:rgba(255,255,255,.4)" id="lbl-worksite">点検前の作業場所の状態を記録します</small></div>
-        </div>
-        <div class="nm-previews" id="worksite-photo-preview"></div>
-
-      <!-- 異常あり セクション -->
+            <!-- 異常あり セクション -->
       <div class="insp-abnormal-section" id="insp-abn-section">
         <div class="insp-abn-title" id="lbl-abntitle">⚠ 異常あり — 詳細を記入してください</div>
         <div class="nm-field">
@@ -6094,10 +6082,6 @@ function submitInsp() {
   const comment = document.getElementById('insp-comment').value.trim();
 
   // Validation
-  if(!worksitePhotoData) {
-    alert('本日の作業場所写真は必須です。\n3S維持確認のため写真を撮影してください。');
-    return;
-  }
   if(hasNg && !comment) {
     alert('異常がある場合は状況コメントを入力してください。');
     return;
