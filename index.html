@@ -44,7 +44,7 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 .hdr-center { font-size:16px; font-weight:700; letter-spacing:4px; color:var(--gold); }
 .hdr-right { text-align:right; }
 #clock { font-size:22px; font-weight:700; letter-spacing:2px; }
-#datedisp { font-size:15px; color:var(--sub); margin-top:2px; }
+#datedisp { font-size:15px; color:var(--sub); margin-top:2px; white-space:nowrap; text-align:right; flex-shrink:0; }
 
 #slides { flex:1; position:relative; overflow:hidden; }
 /* slides bottom padding for fixed footer */
@@ -885,7 +885,7 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 .dot { display:none; }
 #pbar { position:fixed; bottom:64px; left:0; height:2px; background:var(--gold); z-index:300; width:0; }
 
-#admin-toggle { position:fixed; bottom:16px; left:16px; z-index:9999; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.4); font-size:15px; letter-spacing:2px; padding:5px 12px; border-radius:20px; cursor:pointer; transition:all .3s; }
+#admin-toggle { position:fixed; bottom:72px; left:16px; z-index:9999; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.4); font-size:15px; letter-spacing:2px; padding:5px 12px; border-radius:20px; cursor:pointer; transition:all .3s; }
 #admin-toggle:hover { background:rgba(255,255,255,.15); color:#fff; }
 
 /* ===================== ADMIN ===================== */
