@@ -6004,8 +6004,8 @@ function setTabCpState(type, ci, state) {
   if (type === 'monthly') inspMonthlyCpState[ci] = state;
   document.getElementById(`${type}-cpok-${ci}`)?.classList.toggle('active', state==='ok');
   document.getElementById(`${type}-cpng-${ci}`)?.classList.toggle('active', state==='ng');
-  // show abnormal section if any NG
-  const allStates = [...inspDailyCpState, ...inspMonthlyCpState];
+  // show abnormal section if any NG (3S含む全チェック対象)
+  const allStates = [...(inspCpState||[]), ...inspS3State, ...inspDailyCpState, ...inspMonthlyCpState];
   const hasNg = allStates.some(s => s === 'ng');
   document.getElementById('insp-abn-section')?.classList.toggle('show', hasNg);
 }
@@ -6014,8 +6014,9 @@ function setCpState(ci, state) {
   inspCpState[ci] = state;
   document.getElementById(`cpok-${ci}`).classList.toggle('active', state==='ok');
   document.getElementById(`cpng-${ci}`).classList.toggle('active', state==='ng');
-  // show abnormal section if any NG
-  const hasNg = inspCpState.some(s=>s==='ng');
+  // show abnormal section if any NG (3S含む全チェック対象)
+  const allStates = [...inspCpState, ...inspS3State, ...inspDailyCpState, ...inspMonthlyCpState];
+  const hasNg = allStates.some(s=>s==='ng');
   document.getElementById('insp-abn-section').classList.toggle('show', hasNg);
 }
 
@@ -6023,6 +6024,10 @@ function set3sState(ci, state) {
   inspS3State[ci] = state;
   document.getElementById(`3sok-${ci}`)?.classList.toggle('active', state==='ok');
   document.getElementById(`3sng-${ci}`)?.classList.toggle('active', state==='ng');
+  // show abnormal section if any NG (3S含む全チェック対象)
+  const allStates = [...(inspCpState||[]), ...inspS3State, ...inspDailyCpState, ...inspMonthlyCpState];
+  const hasNg = allStates.some(s => s === 'ng');
+  document.getElementById('insp-abn-section')?.classList.toggle('show', hasNg);
 }
 
 function handleWorksitePhoto(files) {
