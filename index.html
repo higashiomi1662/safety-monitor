@@ -31,11 +31,12 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 #display { width:100vw; height:100vh; display:flex; flex-direction:column; }
 
 #hdr {
-  height:66px; flex-shrink:0;
+  height:84px; flex-shrink:0;
   display:flex; align-items:center; justify-content:space-between;
   padding:0 3vw;
   background:linear-gradient(90deg,var(--bg) 0%,var(--primary) 60%,var(--bg) 100%);
   border-bottom:2px solid var(--accent);
+  position:relative; z-index:50;
 }
 .hdr-logo { display:flex; align-items:center; gap:12px; }
 .logo-hex { display:none; }
@@ -44,15 +45,13 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 .hdr-center { font-size:16px; font-weight:700; letter-spacing:4px; color:var(--gold); }
 .hdr-right { text-align:right; }
 #clock { font-size:22px; font-weight:700; letter-spacing:2px; }
-#datedisp { font-size:15px; color:var(--sub); margin-top:2px; white-space:nowrap; text-align:right; flex-shrink:0; }
+#datedisp { font-size:15px; color:var(--sub); margin-top:2px; white-space:nowrap; }
 
 #slides { flex:1; position:relative; overflow:hidden; }
-/* slides bottom padding for fixed footer */
-.slide { padding-bottom:72px; }
 .slide {
   position:absolute; inset:0; opacity:0; pointer-events:none;
   transition:opacity .9s ease;
-  padding:2.5vh 3vw 1vh;
+  padding:2.5vh 3vw 76px;
   display:flex; flex-direction:column;
 }
 .slide.active { opacity:1; pointer-events:auto; }
@@ -885,7 +884,7 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 .dot { display:none; }
 #pbar { position:fixed; bottom:64px; left:0; height:2px; background:var(--gold); z-index:300; width:0; }
 
-#admin-toggle { position:fixed; bottom:72px; left:16px; z-index:9999; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.4); font-size:15px; letter-spacing:2px; padding:5px 12px; border-radius:20px; cursor:pointer; transition:all .3s; }
+#admin-toggle { position:fixed; bottom:76px; left:16px; z-index:9999; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.4); font-size:15px; letter-spacing:2px; padding:5px 12px; border-radius:20px; cursor:pointer; transition:all .3s; }
 #admin-toggle:hover { background:rgba(255,255,255,.15); color:#fff; }
 
 /* ===================== ADMIN ===================== */
@@ -950,23 +949,26 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
   /* ── 基本レイアウト ── */
   html, body { font-size: 14px; }
   #hdr {
-    height: 48px; padding: 0 10px; gap: 8px;
-    flex-wrap: nowrap;
+    height: auto; min-height: 60px; padding: 6px 10px; gap: 6px 8px;
+    flex-wrap: wrap; align-items: center; row-gap: 4px;
   }
   #d-logo-img { height: 34px !important; }
   #d-year-title { font-size: 12px !important; letter-spacing: 1px; }
   #lang-btn { font-size: 11px !important; padding: 4px 10px !important; }
-  .hdr-right { font-size: 12px; }
-  #clock { font-size: 18px !important; }
-  #datedisp { font-size: 11px !important; }
+  .hdr-right { font-size: 12px; flex-shrink: 0; white-space: nowrap; overflow: visible; margin-left: auto; }
+  #clock { font-size: 16px !important; white-space: nowrap; }
+  #datedisp { font-size: 10px !important; white-space: nowrap; overflow: visible; }
+  #hdr > div[style*="gap:10px"] { gap: 6px !important; }
+  #hdr button[onclick="openQR()"] { font-size: 10px !important; padding: 4px 8px !important; }
 
   /* ── スライド共通 ── */
-  .slide { padding: 12px 14px 6px !important; }
+  .slide { padding: 12px 14px 64px !important; }
   .sl-label { font-size: 10px !important; }
   .sl-h1 { font-size: 20px !important; margin-bottom: 10px !important; }
 
   /* ── フッターナビ ── */
   #ftr { height: 52px !important; }
+  #admin-toggle { bottom: 62px !important; }
   #nav-inner { gap: 2px !important; padding: 3px !important; }
   .nav-btn { width: 52px !important; padding: 4px 3px !important; }
   .nav-btn-icon { font-size: 13px !important; }
@@ -1144,6 +1146,7 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
       </div>
       <div id="clock">--:--:--</div>
       <div id="datedisp">読み込み中...</div>
+      <div id="auto-sync-badge" style="font-size:10px;color:#30D158;opacity:0;transition:opacity 1s;white-space:nowrap;"></div>
     </div>
   </header>
 
@@ -2251,6 +2254,7 @@ function doGet(e) {
     <button onclick="document.getElementById('sec-stats').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-stats').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📊 無災害・ヒヤリハット</button>
     <button onclick="document.getElementById('sec-accident').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-accident').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">⚠ 事故事例</button>
     <button onclick="document.getElementById('sec-nm-reports').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-nm-reports').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📋 ヒヤリハットBOX</button>
+    <button onclick="document.getElementById('sec-docs').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-docs').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 安全資料(PDF)</button>
   </div>
   <div class="adm-body">
 
@@ -2487,6 +2491,22 @@ function doGet(e) {
       </div>
     </div>
 
+    <!-- その他安全資料の保管場所（PDF） -->
+    <div class="adm-section">
+      <div class="adm-sec-hdr" onclick="toggleSection(this)"><span>📁 その他安全に関する資料の保管場所（PDF）</span><span class="arrow">▾</span></div>
+      <div class="adm-sec-body hidden" id="sec-docs">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          <span style="font-size:15px;color:var(--sub)">マニュアル・SDS・安全基準書・点検要領など、PDF資料をまとめて保管できます</span>
+          <label style="background:var(--accent);color:#fff;font-size:14px;font-weight:700;padding:8px 18px;border-radius:6px;cursor:pointer;white-space:nowrap;">
+            ＋ PDFを追加
+            <input type="file" accept="application/pdf" multiple onchange="addOtherDoc(this.files)" style="display:none">
+          </label>
+        </div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:10px">※ PDFはブラウザ内に保存されます。容量が大きい場合は端末のローカル保存のみとなるため、クラウドバックアップ（☁ Googleドライブ連携）も併用してください。</div>
+        <div id="other-docs-list" style="display:flex;flex-direction:column;gap:8px;max-height:480px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2506,6 +2526,7 @@ const DEFAULT = {
   coname:'株式会社 東近江製作所', title:'年間安全衛生計画 2026', logochar:'東', slidesec:12, pinPage:0,
   colorPrimary:'#2C2C2E', colorAccent:'#0A84FF', colorGold:'#FF9F0A',
   curmonth: new Date().getMonth()+1,
+  otherDocs: [],
   goals:[
     {num:'0',unit:'件',titleKey:'goal1title',descKey:'goal1desc'},
     {num:'100',unit:'%',titleKey:'goal2title',descKey:'goal2desc'},
@@ -2927,6 +2948,10 @@ function persist() {
     }
     // forkPlan の PDF を除去
     if (slim.forkPlan) slim.forkPlan = {...slim.forkPlan, pdfData:''};
+    // otherDocs の PDF データを除去（一覧情報のみ保持）
+    if (slim.otherDocs) {
+      slim.otherDocs = slim.otherDocs.map(d => ({...d, pdfData:''}));
+    }
     localStorage.setItem('safety_data_v93', JSON.stringify(slim));
   } catch(e) {
     // 容量超過時はさらに削減して再試行
@@ -4052,6 +4077,12 @@ function getTrainingRate() {
 
 // ===================== Google Drive 連携 =====================
 const GAS_URL_KEY = 'safety_gas_url';
+// ── 全端末共通のGAS URL（固定）──
+const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycby14N1lEX4TSUtUqlpJRkR8L_oSo1luQmK_arqPV1MOZvXWfJLWHfoa04cliycMMF61Yw/exec';
+// localStorageにも保存しておく（既存の手動入力機能との互換性維持）
+if (!localStorage.getItem(GAS_URL_KEY)) {
+  localStorage.setItem(GAS_URL_KEY, FIXED_GAS_URL);
+}
 
 function loadLegalPdf(input, i) {
   const f=input.files[0]; if(!f) return;
@@ -4789,6 +4820,7 @@ function renderAdmin() {
   renderNMReports();
   updateRosterBadge();
   renderTrainingPlanAdm();
+  renderOtherDocs();
 
   ['primary','accent','gold'].forEach(k=>{
     const cp=document.getElementById(`a-color-${k}`);
@@ -4796,6 +4828,66 @@ function renderAdmin() {
     cp.oninput=()=>{ tx.value=cp.value; };
     tx.oninput=()=>{ if(/^#[0-9a-f]{6}$/i.test(tx.value)) cp.value=tx.value; };
   });
+}
+
+// ── その他安全資料（PDF保管） ──────────────────────────────
+function addOtherDoc(files) {
+  if (!files || !files.length) return;
+  const list = Array.from(files);
+  let remaining = list.length;
+  list.forEach(f => {
+    if (f.type !== 'application/pdf') { remaining--; return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      if (!D.otherDocs) D.otherDocs = [];
+      D.otherDocs.push({
+        id: 'doc_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        name: f.name.replace(/\.pdf$/i,''),
+        date: new Date().toISOString().slice(0,10),
+        size: f.size,
+        pdfData: e.target.result
+      });
+      remaining--;
+      if (remaining <= 0) { persist(); renderOtherDocs(); showToast(); }
+    };
+    reader.onerror = () => { remaining--; };
+    reader.readAsDataURL(f);
+  });
+}
+function deleteOtherDoc(id) {
+  if (!confirm('この資料を削除しますか？')) return;
+  D.otherDocs = (D.otherDocs||[]).filter(d => d.id !== id);
+  persist(); renderOtherDocs();
+}
+function renameOtherDoc(id, el) {
+  const doc = (D.otherDocs||[]).find(d => d.id === id);
+  if (doc) { doc.name = el.value || doc.name; persist(); }
+}
+function fmtDocSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + 'KB';
+  return (bytes/1024/1024).toFixed(1) + 'MB';
+}
+function renderOtherDocs() {
+  const wrap = document.getElementById('other-docs-list');
+  if (!wrap) return;
+  const docs = D.otherDocs || [];
+  if (!docs.length) {
+    wrap.innerHTML = '<div style="font-size:14px;color:var(--sub);text-align:center;padding:20px">保管されている資料はありません</div>';
+    return;
+  }
+  wrap.innerHTML = docs.slice().reverse().map(d => `
+    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 14px;">
+      <span style="font-size:20px">📄</span>
+      <input value="${(d.name||'').replace(/"/g,'&quot;')}" onchange="renameOtherDoc('${d.id}',this)"
+        style="flex:1;min-width:0;background:transparent;border:none;color:#fff;font-size:14px;font-family:inherit;border-bottom:1px solid transparent;"
+        onfocus="this.style.borderBottomColor='rgba(255,255,255,.2)'" onblur="this.style.borderBottomColor='transparent'">
+      <span style="font-size:11px;color:var(--sub);white-space:nowrap;">${d.date||''}　${fmtDocSize(d.size)}</span>
+      <a href="${d.pdfData}" download="${(d.name||'document')}.pdf"
+        style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:12px;padding:5px 12px;border-radius:6px;text-decoration:none;white-space:nowrap;">⬇ 開く</a>
+      <button onclick="deleteOtherDoc('${d.id}')" class="btn-del" style="font-size:12px;padding:5px 10px;white-space:nowrap;">削除</button>
+    </div>
+  `).join('');
 }
 
 
@@ -6286,6 +6378,47 @@ checkBackupReminder();
   }
 }
 
+// ===================== 自動同期（5分ごと） =====================
+var autoSyncInterval = null;
+var autoSyncBadge = null;
+
+async function autoSyncFromGAS() {
+  const url = FIXED_GAS_URL;
+  try {
+    const res = await fetch(url + '?t=' + Date.now()); // キャッシュ回避
+    const text = await res.text();
+    if (!text || text === '{}') return;
+    const newData = JSON.parse(text);
+    // データが空または同じ場合はスキップ
+    if (!newData || Object.keys(newData).length === 0) return;
+    D = newData;
+    persist();
+    applyColors();
+    renderDisplay();
+    // 同期成功バッジを表示
+    showSyncBadge('✓ 同期済み', '#30D158');
+  } catch(e) {
+    showSyncBadge('同期失敗', '#FF453A');
+  }
+}
+
+function showSyncBadge(msg, color) {
+  var badge = document.getElementById('auto-sync-badge');
+  if (!badge) return;
+  badge.textContent = msg;
+  badge.style.color = color;
+  badge.style.opacity = '1';
+  setTimeout(() => { badge.style.opacity = '0'; }, 3000);
+}
+
+function startAutoSync() {
+  // 起動時に1回すぐ同期
+  autoSyncFromGAS();
+  // 5分ごとに繰り返し
+  if (autoSyncInterval) clearInterval(autoSyncInterval);
+  autoSyncInterval = setInterval(autoSyncFromGAS, 5 * 60 * 1000);
+}
+
 // ===================== CSV書き出し =====================
 function openExcelExport() {
   document.getElementById('excel-panel').style.display = 'flex';
@@ -6785,6 +6918,8 @@ function renderPatrolSlide() {
 
 // ===================== INIT（削除禁止）=====================
 load(); applyColors(); renderDisplay(); applyPinPage(); if(!isPinned) resetSlideTimer();
+// 管理画面でない場合（一般表示モード）は自動同期を開始
+startAutoSync();
 
 </script>
 <div id="backup-reminder" style="display:none;position:fixed;top:0;left:0;right:0;z-index:250;background:linear-gradient(90deg,rgba(66,133,244,.9),rgba(52,168,83,.9));padding:8px 20px;align-items:center;gap:12px;font-size:13px;">
