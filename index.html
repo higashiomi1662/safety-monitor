@@ -6917,8 +6917,8 @@ function renderPatrolSlide() {
 
 // ===================== INIT（削除禁止）=====================
 load(); applyColors(); renderDisplay(); applyPinPage(); if(!isPinned) resetSlideTimer();
-// 管理画面でない場合（一般表示モード）は自動同期を開始
-startAutoSync();
+// 自動同期はバックアップ成功後のみ有効（GASにデータがある場合のみ同期）
+// startAutoSync(); // 初回同期はバックアップ後に手動で有効化
 
 </script>
 <div id="backup-reminder" style="display:none;position:fixed;top:0;left:0;right:0;z-index:250;background:linear-gradient(90deg,rgba(66,133,244,.9),rgba(52,168,83,.9));padding:8px 20px;align-items:center;gap:12px;font-size:13px;">
