@@ -6325,7 +6325,7 @@ function renderDailyList() {
 
 
 async function driveBackup() {
-  const url = localStorage.getItem(GAS_URL_KEY);
+  const url = localStorage.getItem(GAS_URL_KEY) || FIXED_GAS_URL;
   if (!url) { alert('まずGASのURLを登録してください'); return; }
   const logEl = document.getElementById('drive-log');
   logEl.textContent = '☁ バックアップ中...';
@@ -6334,14 +6334,13 @@ async function driveBackup() {
   try {
     const res = await fetch(url, {
       method: 'POST',
-      body: JSON.stringify({ timestamp: ts, payload: D }),
+      body: JSON.stringify(D),
     });
     const json = await res.json();
-    if (json.ok) {
-      const msg = `✓ ${ts} にバックアップ完了（ファイル名: ${json.file}）`;
+    if (json.ok || json.status === 'ok') {
+      const msg = `✓ ${ts} にバックアップ完了`;
       logEl.textContent = msg;
       logEl.style.color = '#30D158';
-      // バックアップ日時を記録
       D.lastDriveBackup = ts;
       persist();
     } else {
@@ -6354,7 +6353,7 @@ async function driveBackup() {
 }
 async function driveRestore() {
   if (!confirm('Google ドライブの最新バックアップからデータを復元しますか？\n現在のデータは上書きされます。')) return;
-  const url = localStorage.getItem(GAS_URL_KEY);
+  const url = localStorage.getItem(GAS_URL_KEY) || FIXED_GAS_URL;
   if (!url) { alert('まずGASのURLを登録してください'); return; }
   const logEl = document.getElementById('drive-log');
   logEl.textContent = '🔄 復元中...';
