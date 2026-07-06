@@ -1604,16 +1604,18 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
       <div style="margin-top:10px;">
         <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">GASコード（コピーして使用）：</div>
         <div style="background:#242426;border-radius:6px;padding:10px;font-family:monospace;font-size:11px;color:#A0C4FF;overflow-x:auto;white-space:pre;cursor:pointer;" onclick="copyGasCode()" title="クリックでコピー">function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
+  const json = e.postData.contents;
   const folder = DriveApp.getRootFolder();
-  const fname = 'safety_backup_' + data.timestamp + '.json';
-  const blob = Utilities.newBlob(
-    JSON.stringify(data.payload, null, 2),
-    'application/json', fname
-  );
-  folder.createFile(blob);
+  const fname = 'safety_backup_latest.json';
+  const files = folder.getFilesByName(fname);
+  if (files.hasNext()) {
+    // 常に同じファイルを上書き（最新データのみ保持）
+    files.next().setContent(json);
+  } else {
+    folder.createFile(fname, json, MimeType.PLAIN_TEXT);
+  }
   return ContentService
-    .createTextOutput(JSON.stringify({ok:true, file:fname}))
+    .createTextOutput(JSON.stringify({ok:true}))
     .setMimeType(ContentService.MimeType.JSON);
 }
 function doGet(e) {
@@ -2927,6 +2929,12 @@ function load() {
   }
 }
 function persist() {
+  // 変更時刻を記録（他端末との新旧比較に使用）
+  D.lastModified = Date.now();
+  persistLocal();
+  scheduleAutoPush();
+}
+function persistLocal() {
   try {
     // 写真・PDFなど大容量データを除外して保存
     const slim = JSON.parse(JSON.stringify(D));
@@ -4078,11 +4086,9 @@ function getTrainingRate() {
 // ===================== Google Drive 連携 =====================
 const GAS_URL_KEY = 'safety_gas_url';
 // ── 全端末共通のGAS URL（固定）──
-const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycby14N1lEX4TSUtUqlpJRkR8L_oSo1luQmK_arqPV1MOZvXWfJLWHfoa04cliycMMF61Yw/exec';
-// localStorageにも保存しておく（既存の手動入力機能との互換性維持）
-if (!localStorage.getItem(GAS_URL_KEY)) {
-  localStorage.setItem(GAS_URL_KEY, FIXED_GAS_URL);
-}
+const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycbwkXY-pA1cHLIEKLyzciGvw4higPw8aD0uNvz2zLcT1zSosIGi-ACqsDHADCXvSYE33bA/exec';
+// 各端末のlocalStorageに古いURLが残っていても、常に最新のFIXED_GAS_URLで上書きする
+localStorage.setItem(GAS_URL_KEY, FIXED_GAS_URL);
 
 function loadLegalPdf(input, i) {
   const f=input.files[0]; if(!f) return;
@@ -6342,7 +6348,8 @@ async function driveBackup() {
       logEl.textContent = msg;
       logEl.style.color = '#30D158';
       D.lastDriveBackup = ts;
-      persist();
+      D.lastModified = Date.now();
+      persistLocal();
     } else {
       throw new Error(JSON.stringify(json));
     }
@@ -6363,7 +6370,7 @@ async function driveRestore() {
     const text = await res.text();
     if (!text || text === '{}') throw new Error('バックアップが見つかりませんでした');
     D = JSON.parse(text);
-    persist();
+    persistLocal();
     applyColors();
     renderDisplay();
 checkBackupReminder();
@@ -6377,10 +6384,13 @@ checkBackupReminder();
   }
 }
 
-// ===================== 自動同期（5分ごと） =====================
+// ===================== 自動同期（受信：1分ごと + 送信：入力後デバウンス） =====================
 var autoSyncInterval = null;
 var autoSyncBadge = null;
+var autoPushTimer = null;
+var isPushingNow = false;
 
+// ── 受信：他端末の方が新しければ取り込む ──
 async function autoSyncFromGAS() {
   const url = FIXED_GAS_URL;
   try {
@@ -6388,16 +6398,45 @@ async function autoSyncFromGAS() {
     const text = await res.text();
     if (!text || text === '{}') return;
     const newData = JSON.parse(text);
-    // データが空または同じ場合はスキップ
     if (!newData || Object.keys(newData).length === 0) return;
+    // 自分がまだ送信していない編集がある場合は上書きしない
+    if (autoPushTimer || isPushingNow) return;
+    // タイムスタンプがある場合は「新しい方」だけ反映する
+    const remoteTs = newData.lastModified || 0;
+    const localTs  = D.lastModified || 0;
+    if (remoteTs && remoteTs <= localTs) return; // ローカルの方が新しい/同じ→何もしない
     D = newData;
-    persist();
+    persistLocal(); // ここでは送信不要（受信したものをそのまま保存するだけ）
     applyColors();
     renderDisplay();
-    // 同期成功バッジを表示
-    showSyncBadge('✓ 同期済み', '#30D158');
+    showSyncBadge('✓ 他端末の更新を反映しました', '#30D158');
   } catch(e) {
     showSyncBadge('同期失敗', '#FF453A');
+  }
+}
+
+// ── 送信：入力が落ち着いてから自動でGASへ送る ──
+function scheduleAutoPush() {
+  if (autoPushTimer) clearTimeout(autoPushTimer);
+  autoPushTimer = setTimeout(pushToGAS, 4000); // 4秒操作がなければ送信
+}
+async function pushToGAS() {
+  autoPushTimer = null;
+  const url = localStorage.getItem(GAS_URL_KEY) || FIXED_GAS_URL;
+  if (!url) return;
+  isPushingNow = true;
+  try {
+    const res = await fetch(url, { method: 'POST', body: JSON.stringify(D) });
+    const json = await res.json().catch(()=>({ok:true}));
+    if (json.ok || json.status === 'ok') {
+      showSyncBadge('✓ 変更を送信しました', '#30D158');
+    } else {
+      showSyncBadge('送信失敗', '#FF453A');
+    }
+  } catch(e) {
+    showSyncBadge('送信失敗（通信エラー）', '#FF453A');
+  } finally {
+    isPushingNow = false;
   }
 }
 
@@ -6413,9 +6452,13 @@ function showSyncBadge(msg, color) {
 function startAutoSync() {
   // 起動時に1回すぐ同期
   autoSyncFromGAS();
-  // 5分ごとに繰り返し
+  // 1分ごとに他端末の更新を確認
   if (autoSyncInterval) clearInterval(autoSyncInterval);
-  autoSyncInterval = setInterval(autoSyncFromGAS, 5 * 60 * 1000);
+  autoSyncInterval = setInterval(autoSyncFromGAS, 60 * 1000);
+  // タブがアクティブに戻った時にも同期確認
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') autoSyncFromGAS();
+  });
 }
 
 // ===================== CSV書き出し =====================
@@ -6917,8 +6960,8 @@ function renderPatrolSlide() {
 
 // ===================== INIT（削除禁止）=====================
 load(); applyColors(); renderDisplay(); applyPinPage(); if(!isPinned) resetSlideTimer();
-// 自動同期はバックアップ成功後のみ有効（GASにデータがある場合のみ同期）
-// startAutoSync(); // 初回同期はバックアップ後に手動で有効化
+// 端末間の自動同期を有効化（起動時に1回取得＋以後1分ごと、入力後は自動送信）
+startAutoSync();
 
 </script>
 <div id="backup-reminder" style="display:none;position:fixed;top:0;left:0;right:0;z-index:250;background:linear-gradient(90deg,rgba(66,133,244,.9),rgba(52,168,83,.9));padding:8px 20px;align-items:center;gap:12px;font-size:13px;">
