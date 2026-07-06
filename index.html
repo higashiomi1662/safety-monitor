@@ -5433,9 +5433,21 @@ function renderNMReports() {
     </div>`).join('');
 }
 function getNMReports() {
-  try{ return JSON.parse(localStorage.getItem('nm_reports')||'[]'); }catch(e){ return []; }
+  // D.nmReports に統一（旧localStorageキーに残っていた分は初回のみ取り込む）
+  if (!Array.isArray(D.nmReports)) D.nmReports = [];
+  try {
+    const legacy = JSON.parse(localStorage.getItem('nm_reports')||'[]');
+    if (legacy.length && D.nmReports.length === 0) {
+      D.nmReports = legacy;
+      persist();
+    }
+  } catch(e) {}
+  return D.nmReports;
 }
-function saveNMReports(arr) { localStorage.setItem('nm_reports',JSON.stringify(arr)); }
+function saveNMReports(arr) {
+  D.nmReports = arr;
+  persist(); // ローカル保存＋他端末への自動送信
+}
 function deleteReport(i) { const r=getNMReports(); r.splice(i,1); saveNMReports(r); renderNMReports(); }
 function clearReports() { if(confirm('全件削除しますか？')) { saveNMReports([]); renderNMReports(); } }
 
