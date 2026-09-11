@@ -1242,6 +1242,9 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
     import { getFirestore, doc, getDoc, setDoc,
              collection, addDoc, getDocs, deleteDoc }
       from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+    import { getStorage, ref as sRef, uploadString,
+             getDownloadURL, deleteObject }
+      from "https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey:            "AIzaSyAfpQ14PAGnQmWcDrrQPakToTvDCir-rns",
@@ -1252,8 +1255,9 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
       appId:             "1:395687174337:web:86d18a8e133ecb3749b440"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+    const app     = initializeApp(firebaseConfig);
+    const db      = getFirestore(app);
+    const storage = getStorage(app);
 
     // ── メインデータ（D オブジェクト）──
     async function fsLoad() {
@@ -1291,6 +1295,24 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
       catch(e) { console.warn('[FS] deleteNM error:', e); }
     }
 
+    // ── ヒヤリハット写真（Cloud Storage）──
+    // dataUrl(base64) を nmPhotos/ 配下に保存し、閲覧用の公開URLを返す
+    async function fsUploadPhoto(dataUrl, idx) {
+      try {
+        const name = 'nm_' + Date.now() + '_' + idx + '_' +
+                     Math.random().toString(36).slice(2, 8) + '.jpg';
+        const r = sRef(storage, 'nmPhotos/' + name);
+        await uploadString(r, dataUrl, 'data_url');
+        return await getDownloadURL(r);
+      } catch(e) { console.warn('[FS] photo upload error:', e); return null; }
+    }
+    async function fsDeletePhotos(urls) {
+      for (const u of (urls || [])) {
+        try { await deleteObject(sRef(storage, u)); }
+        catch(e) { console.warn('[FS] photo delete error:', e); }
+      }
+    }
+
     // ── 月次確認チェック ──
     async function fsGetMcCheck(key) {
       try {
@@ -1305,7 +1327,8 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 
     // グローバルに公開
     window.FS = { fsLoad, fsSave, fsGetNMReports, fsAddNMReport,
-                  fsDeleteNMReport, fsGetMcCheck, fsSaveMcCheck };
+                  fsDeleteNMReport, fsGetMcCheck, fsSaveMcCheck,
+                  fsUploadPhoto, fsDeletePhotos };
     window.FS_READY = true;
     document.dispatchEvent(new Event('fs-ready'));
     console.log('[FS] Firebase 接続完了');
@@ -2317,7 +2340,7 @@ function doGet(e) {
       </div>
       <div class="nm-actions">
         <button class="nm-cancel" onclick="closeNM()">キャンセル</button>
-        <button class="nm-submit" onclick="submitNM()">📤 報告を送信</button>
+        <button class="nm-submit" id="nm-submit-btn" onclick="submitNM()">📤 報告を送信</button>
       </div>
     </div>
     <div class="nm-success" id="nm-success">
@@ -5709,6 +5732,7 @@ function removeSched(i) { D.schedules.splice(i,1); renderQualAdm(); }
 function renderNMReports() {
   const reports = getNMReports();
   const el = document.getElementById('nm-report-list');
+  if(!el) return;
   if(!reports.length){ el.innerHTML='<div class="report-no">報告はまだありません</div>'; return; }
   el.innerHTML=reports.slice().reverse().map((r,i)=>`
     <div class="report-card">
@@ -5721,7 +5745,7 @@ function renderNMReports() {
       </div>
       <div class="report-card-body">${(r.desc||'').replace(/\n/g,'<br>')}</div>
       ${r.comment?`<div style="margin-top:6px;font-size:16px;color:var(--sub)">💡 ${r.comment}</div>`:''}
-      ${r.photos&&r.photos.length?`<div class="report-photos">${r.photos.map(p=>`<img src="${p}" onclick="window.open('${p}')">`).join('')}</div>`:''}
+      ${_nmPhotoHtml(r)}
     </div>`).join('');
 }
 // ─── ヒヤリハット報告（Firestore + localStorageキャッシュ）───
@@ -5735,6 +5759,18 @@ function saveNMReports(arr) {
   _nmCache = arr;
   try { localStorage.setItem('nm_reports', JSON.stringify(arr)); } catch(e){}
 }
+// 表示用の写真ソース：Storage のURLを優先し、無ければ端末内の base64 を使う
+function _nmPhotoSrcs(r) {
+  if (r.photoUrls && r.photoUrls.length) return r.photoUrls;
+  return r.photos || [];
+}
+function _nmPhotoHtml(r) {
+  const ph = _nmPhotoSrcs(r);
+  if (!ph.length) return '';
+  return '<div class="report-photos">' +
+    ph.map(p => '<img src="' + p + '" onclick="window.open(\'' + p + '\')">').join('') +
+    '</div>';
+}
 // Firestore から最新を取得してキャッシュ＆再描画
 function refreshNMReports() {
   if (!window.FS) return;
@@ -5747,8 +5783,9 @@ function refreshNMReports() {
 function deleteReport(i) {
   const r = getNMReports();
   const target = r[i];
-  if (window.FS && target && target._fsId) {
-    window.FS.fsDeleteNMReport(target._fsId).then(() => refreshNMReports());
+  if (window.FS && target) {
+    if (target.photoUrls && target.photoUrls.length) window.FS.fsDeletePhotos(target.photoUrls);
+    if (target._fsId) window.FS.fsDeleteNMReport(target._fsId).then(() => refreshNMReports());
   }
   r.splice(i, 1); saveNMReports(r); renderNMReports();
 }
@@ -5756,6 +5793,7 @@ function clearReports() {
   if (!confirm('全件削除しますか？')) return;
   const r = getNMReports();
   if (window.FS) {
+    r.forEach(x => { if (x.photoUrls && x.photoUrls.length) window.FS.fsDeletePhotos(x.photoUrls); });
     Promise.all(r.filter(x => x._fsId).map(x => window.FS.fsDeleteNMReport(x._fsId)))
       .then(() => { saveNMReports([]); _nmCache = []; renderNMReports(); });
   } else { saveNMReports([]); renderNMReports(); }
@@ -6021,10 +6059,32 @@ function handlePhotos(files) {
     if(!f.type.startsWith('image/')) return;
     const reader=new FileReader();
     reader.onload=e=>{
-      nmPhotos.push(e.target.result);
-      renderPreviews();
+      compressImage(e.target.result, 1600, 0.8).then(d=>{
+        nmPhotos.push(d);
+        renderPreviews();
+      });
     };
     reader.readAsDataURL(f);
+  });
+}
+
+// スマホ写真は数MBあるため、長辺 maxPx 以内に縮小して JPEG 化する
+function compressImage(dataUrl, maxPx, quality) {
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let w = img.width, h = img.height;
+        const scale = Math.min(1, maxPx / Math.max(w, h));
+        w = Math.round(w * scale); h = Math.round(h * scale);
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(cv.toDataURL('image/jpeg', quality));
+      } catch(e) { resolve(dataUrl); }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
   });
 }
 
@@ -6038,9 +6098,10 @@ function renderPreviews() {
 
 function removePhoto(i) { nmPhotos.splice(i,1); renderPreviews(); }
 
-function submitNM() {
+async function submitNM() {
   const desc = document.getElementById('nm-desc').value.trim();
   if(!desc){ alert('状況の説明を入力してください'); return; }
+  const btn = document.getElementById('nm-submit-btn');
   const report = {
     dt:   document.getElementById('nm-dt').value,
     loc:  document.getElementById('nm-loc').value,
@@ -6050,12 +6111,31 @@ function submitNM() {
     desc: desc,
     comment: document.getElementById('nm-comment').value,
     photos: nmPhotos.slice(),
+    photoUrls: [],
     submittedAt: new Date().toISOString()
   };
+
+  // ── 写真を Cloud Storage にアップロード（全端末から閲覧できるようにする）──
+  if (window.FS && window.FS.fsUploadPhoto && nmPhotos.length) {
+    if (btn) { btn.disabled = true; }
+    for (let i = 0; i < nmPhotos.length; i++) {
+      if (btn) btn.textContent = '📤 写真を送信中… (' + (i+1) + '/' + nmPhotos.length + ')';
+      const url = await window.FS.fsUploadPhoto(nmPhotos[i], i);
+      if (url) report.photoUrls.push(url);
+    }
+    if (btn) { btn.disabled = false; btn.textContent = '📤 報告を送信'; }
+    if (report.photoUrls.length < nmPhotos.length) {
+      alert('写真の一部をアップロードできませんでした。報告内容は保存します。\n（この端末では表示されますが、他の端末では見えません）');
+    }
+  }
+  // アップロードに成功した写真は base64 を保持しない（localStorage の容量節約）
+  if (nmPhotos.length && report.photoUrls.length === nmPhotos.length) report.photos = [];
+
   const existing = getNMReports();
   existing.push(report);
   saveNMReports(existing);
-  // Firestore にも保存（写真は除外）
+
+  // Firestore にも保存（base64 の写真本体は除外し、Storage のURLだけ保存）
   if (window.FS) {
     window.FS.fsAddNMReport(report).then(fsId => {
       if (fsId) {
@@ -6064,6 +6144,7 @@ function submitNM() {
       }
     }).catch(e => console.warn('[FS] submitNM addDoc error:', e));
   }
+  renderNMReports();
 
   document.getElementById('nm-form-section').style.display='none';
   document.getElementById('nm-success').classList.add('show');
