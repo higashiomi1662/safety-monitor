@@ -943,36 +943,133 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 /* =====================================================================
    スマートフォン対応（レスポンシブデザイン）
    対象：幅768px以下（スマホ・タブレット縦向き）
+   ※ この @media ブロック内の指定はスマホ幅でのみ有効。
+     PC・大型モニター（769px以上）の見た目には一切影響しない。
    ===================================================================== */
+
+/* PC表示ではスマホ専用UI（ハンバーガー・＋ボタン・メニュー）を非表示 */
+#nav-mobile-bar, #nav-menu, #fab-main { display:none; }
+
 @media (max-width: 768px) {
 
-  /* ── 基本レイアウト ── */
+  /* ── 1. 縦スクロールを可能にする ── */
   html, body { font-size: 14px; }
+  body { overflow-x:hidden !important; overflow-y:auto !important; height:auto !important; min-height:100vh; -webkit-overflow-scrolling:touch; }
+  #display { height:auto !important; min-height:100vh; width:100% !important; }
+  #slides { overflow:visible !important; height:auto !important; }
+  .slide {
+    position:relative !important; inset:auto !important;
+    display:none !important; opacity:1 !important; pointer-events:auto !important;
+    height:auto !important; min-height:calc(100vh - 60px - 60px);
+    padding:12px 14px 96px !important; transition:none !important;
+  }
+  .slide.active { display:flex !important; }
+  /* 100vh固定の内部レイアウトを解除（インライン指定を含む） */
+  .slide [style*="100vh"] { height:auto !important; max-height:none !important; }
+  .patrol-layout, .monthly-insp-grid { height:auto !important; }
+  .stat-big { height:auto !important; }
+  .qual-list, .sched-list, .daily-list, .legal-equip-list, .legal-record-list,
+  .ra-list, .ra-steps-panel, .ai-insp-list, .ai-cards, .insp-grid, .org-layout,
+  .accident-case-card, .accident-prevention-card, .patrol-latest, .patrol-hist {
+    max-height:none !important; overflow:visible !important;
+  }
+  #slide-org, #slide-policy, #slide-slogan { justify-content:flex-start !important; }
+  #slide-patrol, #slide-monthly { padding:12px 14px 96px !important; }
+
+  /* ── ヘッダー ── */
   #hdr {
     height: auto; min-height: 60px; padding: 6px 10px; gap: 6px 8px;
     flex-wrap: wrap; align-items: center; row-gap: 4px;
   }
   #d-logo-img { height: 34px !important; }
   #d-year-title { font-size: 12px !important; letter-spacing: 1px; }
-  #lang-btn { font-size: 11px !important; padding: 4px 10px !important; }
+  #lang-btn { font-size: 12px !important; padding: 8px 12px !important; min-height:44px; }
   .hdr-right { font-size: 12px; flex-shrink: 0; white-space: nowrap; overflow: visible; margin-left: auto; }
   #clock { font-size: 16px !important; white-space: nowrap; }
   #datedisp { font-size: 10px !important; white-space: nowrap; overflow: visible; }
   #hdr > div[style*="gap:10px"] { gap: 6px !important; }
-  #hdr button[onclick="openQR()"] { font-size: 10px !important; padding: 4px 8px !important; }
+  #hdr button[onclick="openQR()"] { font-size: 12px !important; padding: 8px 12px !important; min-height:44px; }
+  #pin-btn { min-height:44px; }
 
   /* ── スライド共通 ── */
-  .slide { padding: 12px 14px 64px !important; }
-  .sl-label { font-size: 10px !important; }
+  .sl-label { font-size: 11px !important; }
   .sl-h1 { font-size: 20px !important; margin-bottom: 10px !important; }
 
-  /* ── フッターナビ ── */
-  #ftr { height: 52px !important; }
-  #admin-toggle { bottom: 62px !important; }
-  #nav-inner { gap: 2px !important; padding: 3px !important; }
-  .nav-btn { width: 52px !important; padding: 4px 3px !important; }
-  .nav-btn-icon { font-size: 13px !important; }
-  .nav-btn-label { font-size: 9px !important; }
+  /* ── 2. フッターナビ → ハンバーガーメニュー ── */
+  #ftr { height: 60px !important; padding:0 8px !important; }
+  #nav-inner { display:none !important; }
+  #nav-mobile-bar {
+    display:flex !important; align-items:center; gap:8px; width:100%; height:100%;
+  }
+  #nav-hamburger {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    min-width:44px; min-height:44px; height:44px; padding:0 12px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.18);
+    border-radius:8px; color:var(--text); font-family:inherit; font-size:14px; font-weight:700;
+    cursor:pointer; flex-shrink:0;
+  }
+  #nav-hamburger .ham-lines { display:flex; flex-direction:column; gap:4px; }
+  #nav-hamburger .ham-lines span { display:block; width:20px; height:2px; background:var(--gold); border-radius:2px; }
+  #nav-current {
+    flex:1; min-width:0; text-align:center; font-size:14px; font-weight:700; color:var(--gold);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:1px;
+  }
+  .nav-arrow {
+    min-width:44px; min-height:44px; height:44px; width:44px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.18);
+    border-radius:8px; color:var(--text); font-size:20px; font-family:inherit; cursor:pointer; flex-shrink:0;
+  }
+  #nav-menu {
+    position:fixed; inset:0; z-index:8000; background:rgba(0,0,0,.6);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    align-items:flex-end; justify-content:center;
+  }
+  #nav-menu.open { display:flex !important; }
+  .nav-menu-sheet {
+    width:100%; max-height:78vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:#2C2C2E; border-top:2px solid var(--gold); border-radius:14px 14px 0 0;
+    padding:12px 12px calc(16px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .nav-menu-hdr { display:flex; align-items:center; justify-content:space-between; padding:2px 4px; }
+  .nav-menu-hdr span { font-size:13px; letter-spacing:3px; color:var(--sub); font-weight:700; }
+  .nav-menu-close {
+    min-width:44px; min-height:44px; border-radius:22px;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18);
+    color:#fff; font-size:18px; font-family:inherit; cursor:pointer;
+  }
+  .nav-menu-list { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .nav-menu-item {
+    display:flex; align-items:center; gap:10px; min-height:52px; padding:8px 12px;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:8px;
+    color:var(--text); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; text-align:left;
+  }
+  .nav-menu-item.active { background:rgba(245,168,0,.18); border-color:var(--gold); color:var(--gold); }
+  .nav-menu-item .nmi-icon { font-size:18px; flex-shrink:0; }
+  #pbar { bottom:60px !important; }
+  #admin-toggle { font-size: 11px !important; padding: 8px 12px !important; min-height:44px; bottom: 70px !important; left:10px !important; z-index:450 !important; }
+
+  /* ── 3. 入力ボタン4つ → 「＋」1つに集約 ── */
+  #fab-group { right: 10px !important; bottom: 70px !important; gap:10px !important; align-items:flex-end !important; }
+  #fab-group > #nm-fab, #fab-group > #training-fab, #fab-group > #patrol-fab, #fab-group > #insp-fab {
+    display:none !important;
+  }
+  #fab-group.open > #nm-fab, #fab-group.open > #training-fab,
+  #fab-group.open > #patrol-fab, #fab-group.open > #insp-fab {
+    display:flex !important; font-size:14px !important; padding:0 18px !important;
+    min-height:48px !important; height:48px; align-items:center; border-radius:24px !important;
+  }
+  #fab-main {
+    display:flex !important; align-items:center; justify-content:center;
+    width:56px; height:56px; border-radius:50%;
+    background:var(--accent); color:#fff; border:none; font-family:inherit;
+    font-size:32px; font-weight:700; line-height:1; cursor:pointer;
+    box-shadow:0 4px 20px rgba(10,132,255,.5); transition:transform .25s;
+  }
+  #fab-group.open #fab-main { transform:rotate(45deg); background:#3A3A3C; }
+  #fab-backdrop { display:none; position:fixed; inset:0; z-index:499; background:rgba(0,0,0,.35); }
+  #fab-group.open ~ #fab-backdrop, #fab-backdrop.show { display:block; }
 
   /* ── 安全衛生方針 ── */
   .policy-heading { font-size: 20px !important; margin-bottom: 16px !important; }
@@ -982,37 +1079,53 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
   .policy-sub { font-size: 12px !important; }
   .policy-items { gap: 10px !important; }
 
-  /* ── 年間目標 ── */
+  /* ── 4. 多列グリッド → 1列 / 2列 ── */
   .goals-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
-  .goal-num { font-size: 40px !important; }
+  .goal-card { padding:14px 14px !important; }
+  .goal-num { font-size: 36px !important; }
   .goal-title { font-size: 16px !important; }
-  .goal-desc { font-size: 12px !important; }
+  .goal-desc { font-size: 13px !important; }
 
-  /* ── 月別活動 ── */
-  .months-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+  .months-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
   .mc-num { font-size: 16px !important; }
-  .mc-act { font-size: 10px !important; }
+  .mc-act { font-size: 11px !important; }
+
+  .insp-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
+  .ic-icon { font-size: 16px !important; }
+  .ic-name { font-size: 12px !important; }
+  .ic-date { font-size: 11px !important; }
+  .ic-legal-badge { font-size: 10px !important; }
+  .sv-n { font-size: 22px !important; }
+  .sv-l { font-size: 11px !important; }
+
+  .stats-layout, .daily-layout, .accident-layout, .legal-layout, .ra-layout,
+  .ai-layout, .patrol-layout, .nm-analysis-layout, .qual-layout {
+    display:flex !important; flex-direction:column !important; gap:10px !important;
+    grid-template-columns:1fr !important;
+  }
+  .ai-layout { display:grid !important; grid-template-columns:1fr !important; }
+  .nm-analysis-layout { display:grid !important; grid-template-columns:1fr !important; grid-template-rows:auto !important; }
+  .nm-sync-bar { flex-wrap:wrap !important; }
+  .monthly-insp-grid { grid-template-columns: 1fr !important; }
+  .month-grid-adm { grid-template-columns: 1fr !important; }
+  #tr-monthly-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  /* スライド内のインライン指定グリッド（2列・3列）を1列に */
+  .slide [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  .slide #tr-monthly-grid[style*="grid-template-columns"] { grid-template-columns: repeat(2,1fr) !important; }
+  .patrol-stat-bar { flex-wrap:wrap !important; }
+  .patrol-stat-item { min-width:calc(50% - 6px); }
+  .ra-status-row .ra-item { min-width:calc(50% - 5px) !important; }
+  .qual-count-row { flex-wrap:wrap !important; }
+  .ra-overview { flex-wrap:wrap !important; }
 
   /* ── リスクアセスメント ── */
-  .ra-layout { grid-template-columns: 1fr !important; gap: 10px !important; }
   .ra-card-theme { font-size: 13px !important; }
   .ra-meta-item { font-size: 11px !important; }
 
   /* ── 法令点検 ── */
-  .legal-layout { grid-template-columns: 1fr !important; }
   .legal-equip-name { font-size: 13px !important; }
 
-  /* ── 設備点検 ── */
-  .insp-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 5px !important; }
-  .ic-icon { font-size: 16px !important; }
-  .ic-name { font-size: 11px !important; }
-  .ic-date { font-size: 10px !important; }
-  .ic-legal-badge { font-size: 9px !important; }
-  .sv-n { font-size: 22px !important; }
-  .sv-l { font-size: 11px !important; }
-
   /* ── 日次点検 ── */
-  .daily-layout { flex-direction: column !important; gap: 10px !important; }
   .daily-rate-card { padding: 12px !important; }
   .daily-rate-num { font-size: 48px !important; }
   .daily-rate-lbl { font-size: 13px !important; }
@@ -1020,7 +1133,6 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
   .daily-item-name { font-size: 12px !important; }
 
   /* ── 統計 ── */
-  .stats-layout { flex-direction: column !important; gap: 10px !important; }
   .stat-big { padding: 12px !important; }
   .stat-val { font-size: 40px !important; }
   .stat-lbl { font-size: 13px !important; }
@@ -1028,14 +1140,11 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
   .bar-cnt { font-size: 11px !important; }
 
   /* ── ヒヤリハット分析 ── */
-  #slide-nm-analysis > div:last-child {
-    grid-template-columns: 1fr !important;
-  }
   .nm-sync-val { font-size: 24px !important; }
   .nm-sync-lbl { font-size: 11px !important; }
+  .nm-chart-wrap { min-height:220px !important; }
 
   /* ── 事故事例 ── */
-  .accident-layout { grid-template-columns: 1fr !important; }
   .accident-desc { font-size: 14px !important; }
   .prevention-text { font-size: 13px !important; }
 
@@ -1046,42 +1155,68 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 
   /* ── 資格一覧表（横スクロール） ── */
   #slide-qual > div:last-child { overflow-x: auto !important; }
-  .hoshi-table th, .hoshi-table td { font-size: 10px !important; padding: 4px 5px !important; }
+  .hoshi-wrap { overflow-x:auto !important; }
+  .hoshi-table th, .hoshi-table td { font-size: 11px !important; padding: 4px 5px !important; }
 
   /* ── AI安全アドバイス ── */
-  .ai-layout { flex-direction: column !important; gap: 10px !important; }
-  .ai-left { max-height: 180px !important; overflow-y: auto !important; }
+  .ai-left { max-height: none !important; overflow: visible !important; }
   .ai-card-title { font-size: 14px !important; }
   .ai-card-body { font-size: 13px !important; }
   .ai-header-text h3 { font-size: 14px !important; }
   .ai-header-text p { font-size: 11px !important; }
-
-  /* ── FABボタン ── */
-  #fab-group { right: 8px !important; bottom: 60px !important; }
-  #insp-fab, #nm-fab {
-    font-size: 11px !important; padding: 8px 12px !important;
-  }
-  #admin-toggle { font-size: 10px !important; padding: 4px 10px !important; bottom: 56px !important; }
 
   /* ── モーダル ── */
   .nm-modal-inner, .insp-modal-inner {
     width: 96vw !important; height: 92vh !important;
     border-radius: 6px !important;
   }
+  .nm-box, .insp-box { width:96vw !important; padding:18px 16px !important; max-height:92vh !important; }
+  .patrol-modal-inner { padding:16px !important; }
   .nm-field label, .insp-label { font-size: 12px !important; }
+
+  /* ── 5. 入力欄の文字サイズ 16px以上（iOS自動ズーム防止） ── */
+  input, select, textarea,
   .nm-field input, .nm-field select, .nm-field textarea,
-  .insp-field input, .insp-field select, .insp-field textarea {
-    font-size: 14px !important; padding: 8px !important;
+  .insp-field input, .insp-field select, .insp-field textarea,
+  .adm-field input, .adm-field select, .adm-field textarea,
+  .patrol-ng-comment input {
+    font-size: 16px !important; padding: 10px 12px !important; min-height:44px;
   }
+  textarea { min-height:90px !important; }
+  input[type="checkbox"], input[type="radio"] { min-height:auto; width:22px; height:22px; padding:0 !important; }
+  input[type="file"] { min-height:auto; }
+
+  /* ── 6. タップ領域 縦44px以上 ── */
+  .nav-btn { min-height:44px; }
+  button:not(.nm-preview-del):not(.legal-pdf-modal-close):not(.nav-menu-close):not(#fab-main),
+  .cp-btn, .patrol-cp-btn, .btn, .btn-del, .nm-submit, .nm-cancel, .legal-pdf-btn, .nm-tab,
+  #add-insp-btn, .adm-sec-hdr {
+    min-height:44px;
+  }
+  .legal-pdf-modal-close { width:44px !important; height:44px !important; }
+  .nm-preview-del { width:28px !important; height:28px !important; font-size:16px !important; }
+  .cp-btn, .patrol-cp-btn { padding:8px 14px !important; font-size:15px !important; }
+  .patrol-cp-btns { flex-wrap:wrap; gap:6px !important; }
+  .insp-cp-row { grid-template-columns:1fr !important; }
+  .nm-tab { display:inline-flex; align-items:center; }
+  .legal-equip-card, .nav-menu-item { min-height:44px; }
+  .nm-actions { flex-wrap:wrap; }
+  .nm-submit, .nm-cancel { flex:1; }
+
+  /* ── 管理画面 ── */
+  .adm-hdr { padding:0 12px !important; height:auto !important; min-height:60px; flex-wrap:wrap; gap:8px; }
+  .adm-body { padding:14px !important; }
+  .adm-sec-body { padding:14px !important; }
+  .insp-adm-row { grid-template-columns:1fr 1fr !important; }
 }
 
 @media (max-width: 480px) {
   /* ── 超小型スマホ追加調整 ── */
   .sl-h1 { font-size: 17px !important; }
-  .months-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .insp-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .goals-grid { gap: 6px !important; }
   .policy-main { font-size: 14px !important; }
+  .nav-menu-list { grid-template-columns: 1fr 1fr; }
+  #nav-hamburger .ham-label { display:none; }
 }
 
 /* patrol-modal / training-modal */
@@ -1100,6 +1235,81 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- ===== Firebase / Firestore SDK ===== -->
+  <script type="module" id="firebase-init-module">
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc,
+             collection, addDoc, getDocs, deleteDoc }
+      from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAfpQ14PAGnQmWcDrrQPakToTvDCir-rns",
+      authDomain:        "higashiomi-safety.firebaseapp.com",
+      projectId:         "higashiomi-safety",
+      storageBucket:     "higashiomi-safety.firebasestorage.app",
+      messagingSenderId: "395687174337",
+      appId:             "1:395687174337:web:86d18a8e133ecb3749b440"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // ── メインデータ（D オブジェクト）──
+    async function fsLoad() {
+      try {
+        const snap = await getDoc(doc(db, 'safety', 'main'));
+        return snap.exists() ? snap.data() : null;
+      } catch(e) { console.warn('[FS] load error:', e); return null; }
+    }
+    async function fsSave(data) {
+      try { await setDoc(doc(db, 'safety', 'main'), data, { merge: true }); }
+      catch(e) { console.warn('[FS] save error:', e); }
+    }
+
+    // ── ヒヤリハット報告 ──
+    async function fsGetNMReports() {
+      try {
+        const snap = await getDocs(collection(db, 'nmReports'));
+        const arr = [];
+        snap.forEach(d => arr.push({ _fsId: d.id, ...d.data() }));
+        arr.sort((a,b) => (b.submittedAt||'').localeCompare(a.submittedAt||''));
+        return arr;
+      } catch(e) { console.warn('[FS] getNM error:', e); return []; }
+    }
+    async function fsAddNMReport(report) {
+      try {
+        const r = {...report};
+        delete r.photos; // 写真データは除外（容量節約）
+        delete r._fsId;
+        const ref = await addDoc(collection(db, 'nmReports'), r);
+        return ref.id;
+      } catch(e) { console.warn('[FS] addNM error:', e); return null; }
+    }
+    async function fsDeleteNMReport(fsId) {
+      try { await deleteDoc(doc(db, 'nmReports', fsId)); }
+      catch(e) { console.warn('[FS] deleteNM error:', e); }
+    }
+
+    // ── 月次確認チェック ──
+    async function fsGetMcCheck(key) {
+      try {
+        const snap = await getDoc(doc(db, 'mcCheck', key));
+        return snap.exists() ? snap.data() : {};
+      } catch(e) { return {}; }
+    }
+    async function fsSaveMcCheck(key, data) {
+      try { await setDoc(doc(db, 'mcCheck', key), data); }
+      catch(e) { console.warn('[FS] saveMc error:', e); }
+    }
+
+    // グローバルに公開
+    window.FS = { fsLoad, fsSave, fsGetNMReports, fsAddNMReport,
+                  fsDeleteNMReport, fsGetMcCheck, fsSaveMcCheck };
+    window.FS_READY = true;
+    document.dispatchEvent(new Event('fs-ready'));
+    console.log('[FS] Firebase 接続完了');
+  </script>
 </head>
 <body>
 
@@ -1563,7 +1773,28 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
 
 </div>
     </div>
+    <!-- スマホ用ナビバー（768px以下でのみ表示） -->
+    <div id="nav-mobile-bar">
+      <button type="button" id="nav-hamburger" onclick="toggleNavMenu()" aria-label="メニューを開く">
+        <span class="ham-lines"><span></span><span></span><span></span></span>
+        <span class="ham-label">メニュー</span>
+      </button>
+      <div id="nav-current">安全方針</div>
+      <button type="button" class="nav-arrow" onclick="goTo(cur-1)" aria-label="前のページ">‹</button>
+      <button type="button" class="nav-arrow" onclick="goTo(cur+1)" aria-label="次のページ">›</button>
+    </div>
   </footer>
+</div>
+
+<!-- スマホ用ハンバーガーメニュー（768px以下でのみ表示） -->
+<div id="nav-menu" onclick="if(event.target===this)closeNavMenu()">
+  <div class="nav-menu-sheet">
+    <div class="nav-menu-hdr">
+      <span>MENU</span>
+      <button type="button" class="nav-menu-close" onclick="closeNavMenu()" aria-label="閉じる">✕</button>
+    </div>
+    <div class="nav-menu-list" id="nav-menu-list"></div>
+  </div>
 </div>
 
 <!-- ========== FAB GROUP (left bottom, stacked) ========== -->
@@ -1580,7 +1811,10 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
   <button id="insp-fab" onclick="openInspSelect()">
     🔧 設備点検入力
   </button>
+  <!-- スマホ用「＋」ボタン（768px以下でのみ表示・タップで上の4つを展開） -->
+  <button type="button" id="fab-main" onclick="toggleFab()" aria-label="入力メニューを開く">＋</button>
 </div>
+<div id="fab-backdrop" onclick="closeFab()"></div>
 
 
 
@@ -1604,18 +1838,16 @@ body { font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif; backgr
       <div style="margin-top:10px;">
         <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">GASコード（コピーして使用）：</div>
         <div style="background:#242426;border-radius:6px;padding:10px;font-family:monospace;font-size:11px;color:#A0C4FF;overflow-x:auto;white-space:pre;cursor:pointer;" onclick="copyGasCode()" title="クリックでコピー">function doPost(e) {
-  const json = e.postData.contents;
+  const data = JSON.parse(e.postData.contents);
   const folder = DriveApp.getRootFolder();
-  const fname = 'safety_backup_latest.json';
-  const files = folder.getFilesByName(fname);
-  if (files.hasNext()) {
-    // 常に同じファイルを上書き（最新データのみ保持）
-    files.next().setContent(json);
-  } else {
-    folder.createFile(fname, json, MimeType.PLAIN_TEXT);
-  }
+  const fname = 'safety_backup_' + data.timestamp + '.json';
+  const blob = Utilities.newBlob(
+    JSON.stringify(data.payload, null, 2),
+    'application/json', fname
+  );
+  folder.createFile(blob);
   return ContentService
-    .createTextOutput(JSON.stringify({ok:true}))
+    .createTextOutput(JSON.stringify({ok:true, file:fname}))
     .setMimeType(ContentService.MimeType.JSON);
 }
 function doGet(e) {
@@ -2887,10 +3119,12 @@ const DEFAULT = {
 
 var D = {};
 function load() {
+  // ① localStorage から即時起動（オフライン/初回表示対応）
   try {
     const s = localStorage.getItem('safety_data_v93');
-    if (!s) { D = JSON.parse(JSON.stringify(DEFAULT)); return; }
-    const saved = JSON.parse(s);
+    if (!s) { D = JSON.parse(JSON.stringify(DEFAULT)); }
+    else {
+      const saved = JSON.parse(s);
     D = JSON.parse(JSON.stringify(DEFAULT));
     // スカラー・配列フィールドはそのまま上書き（inspections以外）
     const skip = new Set(['inspections','trainingAnnualPlan']);
@@ -2924,17 +3158,56 @@ function load() {
         };
       });
     }
+    }
   } catch(e) {
     D = JSON.parse(JSON.stringify(DEFAULT));
   }
+  // ② Firestore から最新データを取得して上書き（非同期）
+  function _applyFS(fsData) {
+    if (!fsData) return;
+    try {
+      const saved = fsData;
+      D = JSON.parse(JSON.stringify(DEFAULT));
+      const skip = new Set(['inspections','trainingAnnualPlan']);
+      Object.keys(saved).forEach(k => { if (!skip.has(k)) D[k] = saved[k]; });
+      if (saved.inspections && Array.isArray(saved.inspections)) {
+        D.inspections = D.inspections.map((def, i) => {
+          const sv = saved.inspections[i]; if (!sv) return def;
+          return {
+            ...def,
+            status:             sv.status             || def.status,
+            comment:            sv.comment            || def.comment,
+            photo:              sv.photo              || def.photo,
+            worksitePhoto:      sv.worksitePhoto      || '',
+            lastInspectedDate:  sv.lastInspectedDate  || '',
+            lastInspType:       sv.lastInspType       || '',
+            lastDailyCpState:   sv.lastDailyCpState   || [],
+            lastMonthlyCpState: sv.lastMonthlyCpState || [],
+            s3State:            sv.s3State            || [],
+            reporter:           sv.reporter           || '',
+            dept:               sv.dept               || '',
+            prev:               sv.prev               || def.prev,
+            next:               sv.next               || def.next,
+            dailyCheckpoints:   (sv.dailyCheckpoints   && sv.dailyCheckpoints.length)   ? sv.dailyCheckpoints   : def.dailyCheckpoints,
+            monthlyCheckpoints: (sv.monthlyCheckpoints && sv.monthlyCheckpoints.length) ? sv.monthlyCheckpoints : def.monthlyCheckpoints,
+            name:               sv.name || def.name,
+            icon:               sv.icon || def.icon,
+          };
+        });
+      }
+      // localStorageにもキャッシュして次回起動を高速化
+      try { localStorage.setItem('safety_data_v93', JSON.stringify(saved)); } catch(e2){}
+      applyColors(); renderDisplay();
+      console.log('[FS] Firestore データで画面を更新しました');
+    } catch(e) { console.warn('[FS] _applyFS error:', e); }
+  }
+  if (window.FS_READY) {
+    window.FS.fsLoad().then(_applyFS);
+  } else {
+    document.addEventListener('fs-ready', () => window.FS.fsLoad().then(_applyFS), { once: true });
+  }
 }
 function persist() {
-  // 変更時刻を記録（他端末との新旧比較に使用）
-  D.lastModified = Date.now();
-  persistLocal();
-  scheduleAutoPush();
-}
-function persistLocal() {
   try {
     // 写真・PDFなど大容量データを除外して保存
     const slim = JSON.parse(JSON.stringify(D));
@@ -2961,6 +3234,8 @@ function persistLocal() {
       slim.otherDocs = slim.otherDocs.map(d => ({...d, pdfData:''}));
     }
     localStorage.setItem('safety_data_v93', JSON.stringify(slim));
+    // Firestore にも保存（非同期・失敗してもUIは継続）
+    if (window.FS) window.FS.fsSave(slim).catch(e => console.warn('[FS] persist fsSave error:', e));
   } catch(e) {
     // 容量超過時はさらに削減して再試行
     try {
@@ -4086,9 +4361,11 @@ function getTrainingRate() {
 // ===================== Google Drive 連携 =====================
 const GAS_URL_KEY = 'safety_gas_url';
 // ── 全端末共通のGAS URL（固定）──
-const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycbwkXY-pA1cHLIEKLyzciGvw4higPw8aD0uNvz2zLcT1zSosIGi-ACqsDHADCXvSYE33bA/exec';
-// 各端末のlocalStorageに古いURLが残っていても、常に最新のFIXED_GAS_URLで上書きする
-localStorage.setItem(GAS_URL_KEY, FIXED_GAS_URL);
+const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycby14N1lEX4TSUtUqlpJRkR8L_oSo1luQmK_arqPV1MOZvXWfJLWHfoa04cliycMMF61Yw/exec';
+// localStorageにも保存しておく（既存の手動入力機能との互換性維持）
+if (!localStorage.getItem(GAS_URL_KEY)) {
+  localStorage.setItem(GAS_URL_KEY, FIXED_GAS_URL);
+}
 
 function loadLegalPdf(input, i) {
   const f=input.files[0]; if(!f) return;
@@ -4329,6 +4606,8 @@ function renderMonthlyCheck() {
   if (checkEl) {
     // 保存済みチェック状態（localStorage）
     const storeKey = 'mc_check_' + currentFiscalMo + '_' + now.getFullYear();
+    // Firestore から最新チェック状態を取得（非同期）
+    syncMcCheck(storeKey);
     let savedChecks = {};
     try { savedChecks = JSON.parse(localStorage.getItem(storeKey)||'{}'); } catch(e){}
 
@@ -4751,7 +5030,20 @@ function toggleMcCheck(idx, storeKey, labelEl) {
   try { saved = JSON.parse(localStorage.getItem(storeKey)||'{}'); } catch(e){}
   saved[idx] = !saved[idx];
   localStorage.setItem(storeKey, JSON.stringify(saved));
+  // Firestore にも保存
+  if (window.FS) window.FS.fsSaveMcCheck(storeKey, saved).catch(e => console.warn('[FS] saveMcCheck error:', e));
   renderMonthlyCheck(); // 再描画
+}
+
+// 月次確認チェックを Firestore から取得して同期
+function syncMcCheck(storeKey) {
+  if (!window.FS) return;
+  window.FS.fsGetMcCheck(storeKey).then(data => {
+    if (data && Object.keys(data).length > 0) {
+      localStorage.setItem(storeKey, JSON.stringify(data));
+      renderMonthlyCheck();
+    }
+  }).catch(e => console.warn('[FS] getMcCheck error:', e));
 }
 
 
@@ -5432,24 +5724,42 @@ function renderNMReports() {
       ${r.photos&&r.photos.length?`<div class="report-photos">${r.photos.map(p=>`<img src="${p}" onclick="window.open('${p}')">`).join('')}</div>`:''}
     </div>`).join('');
 }
+// ─── ヒヤリハット報告（Firestore + localStorageキャッシュ）───
+var _nmCache = null; // メモリキャッシュ
+
 function getNMReports() {
-  // D.nmReports に統一（旧localStorageキーに残っていた分は初回のみ取り込む）
-  if (!Array.isArray(D.nmReports)) D.nmReports = [];
-  try {
-    const legacy = JSON.parse(localStorage.getItem('nm_reports')||'[]');
-    if (legacy.length && D.nmReports.length === 0) {
-      D.nmReports = legacy;
-      persist();
-    }
-  } catch(e) {}
-  return D.nmReports;
+  if (_nmCache !== null) return _nmCache;
+  try { return JSON.parse(localStorage.getItem('nm_reports')||'[]'); } catch(e) { return []; }
 }
 function saveNMReports(arr) {
-  D.nmReports = arr;
-  persist(); // ローカル保存＋他端末への自動送信
+  _nmCache = arr;
+  try { localStorage.setItem('nm_reports', JSON.stringify(arr)); } catch(e){}
 }
-function deleteReport(i) { const r=getNMReports(); r.splice(i,1); saveNMReports(r); renderNMReports(); }
-function clearReports() { if(confirm('全件削除しますか？')) { saveNMReports([]); renderNMReports(); } }
+// Firestore から最新を取得してキャッシュ＆再描画
+function refreshNMReports() {
+  if (!window.FS) return;
+  window.FS.fsGetNMReports().then(arr => {
+    _nmCache = arr;
+    try { localStorage.setItem('nm_reports', JSON.stringify(arr)); } catch(e){}
+    renderNMReports();
+  }).catch(e => console.warn('[FS] refreshNM error:', e));
+}
+function deleteReport(i) {
+  const r = getNMReports();
+  const target = r[i];
+  if (window.FS && target && target._fsId) {
+    window.FS.fsDeleteNMReport(target._fsId).then(() => refreshNMReports());
+  }
+  r.splice(i, 1); saveNMReports(r); renderNMReports();
+}
+function clearReports() {
+  if (!confirm('全件削除しますか？')) return;
+  const r = getNMReports();
+  if (window.FS) {
+    Promise.all(r.filter(x => x._fsId).map(x => window.FS.fsDeleteNMReport(x._fsId)))
+      .then(() => { saveNMReports([]); _nmCache = []; renderNMReports(); });
+  } else { saveNMReports([]); renderNMReports(); }
+}
 
 
 function saveAll() {
@@ -5745,6 +6055,15 @@ function submitNM() {
   const existing = getNMReports();
   existing.push(report);
   saveNMReports(existing);
+  // Firestore にも保存（写真は除外）
+  if (window.FS) {
+    window.FS.fsAddNMReport(report).then(fsId => {
+      if (fsId) {
+        report._fsId = fsId;
+        refreshNMReports(); // 他の端末と同期
+      }
+    }).catch(e => console.warn('[FS] submitNM addDoc error:', e));
+  }
 
   document.getElementById('nm-form-section').style.display='none';
   document.getElementById('nm-success').classList.add('show');
@@ -6360,8 +6679,7 @@ async function driveBackup() {
       logEl.textContent = msg;
       logEl.style.color = '#30D158';
       D.lastDriveBackup = ts;
-      D.lastModified = Date.now();
-      persistLocal();
+      persist();
     } else {
       throw new Error(JSON.stringify(json));
     }
@@ -6382,7 +6700,7 @@ async function driveRestore() {
     const text = await res.text();
     if (!text || text === '{}') throw new Error('バックアップが見つかりませんでした');
     D = JSON.parse(text);
-    persistLocal();
+    persist();
     applyColors();
     renderDisplay();
 checkBackupReminder();
@@ -6396,13 +6714,10 @@ checkBackupReminder();
   }
 }
 
-// ===================== 自動同期（受信：1分ごと + 送信：入力後デバウンス） =====================
+// ===================== 自動同期（5分ごと） =====================
 var autoSyncInterval = null;
 var autoSyncBadge = null;
-var autoPushTimer = null;
-var isPushingNow = false;
 
-// ── 受信：他端末の方が新しければ取り込む ──
 async function autoSyncFromGAS() {
   const url = FIXED_GAS_URL;
   try {
@@ -6410,45 +6725,16 @@ async function autoSyncFromGAS() {
     const text = await res.text();
     if (!text || text === '{}') return;
     const newData = JSON.parse(text);
+    // データが空または同じ場合はスキップ
     if (!newData || Object.keys(newData).length === 0) return;
-    // 自分がまだ送信していない編集がある場合は上書きしない
-    if (autoPushTimer || isPushingNow) return;
-    // タイムスタンプがある場合は「新しい方」だけ反映する
-    const remoteTs = newData.lastModified || 0;
-    const localTs  = D.lastModified || 0;
-    if (remoteTs && remoteTs <= localTs) return; // ローカルの方が新しい/同じ→何もしない
     D = newData;
-    persistLocal(); // ここでは送信不要（受信したものをそのまま保存するだけ）
+    persist();
     applyColors();
     renderDisplay();
-    showSyncBadge('✓ 他端末の更新を反映しました', '#30D158');
+    // 同期成功バッジを表示
+    showSyncBadge('✓ 同期済み', '#30D158');
   } catch(e) {
     showSyncBadge('同期失敗', '#FF453A');
-  }
-}
-
-// ── 送信：入力が落ち着いてから自動でGASへ送る ──
-function scheduleAutoPush() {
-  if (autoPushTimer) clearTimeout(autoPushTimer);
-  autoPushTimer = setTimeout(pushToGAS, 4000); // 4秒操作がなければ送信
-}
-async function pushToGAS() {
-  autoPushTimer = null;
-  const url = localStorage.getItem(GAS_URL_KEY) || FIXED_GAS_URL;
-  if (!url) return;
-  isPushingNow = true;
-  try {
-    const res = await fetch(url, { method: 'POST', body: JSON.stringify(D) });
-    const json = await res.json().catch(()=>({ok:true}));
-    if (json.ok || json.status === 'ok') {
-      showSyncBadge('✓ 変更を送信しました', '#30D158');
-    } else {
-      showSyncBadge('送信失敗', '#FF453A');
-    }
-  } catch(e) {
-    showSyncBadge('送信失敗（通信エラー）', '#FF453A');
-  } finally {
-    isPushingNow = false;
   }
 }
 
@@ -6464,13 +6750,9 @@ function showSyncBadge(msg, color) {
 function startAutoSync() {
   // 起動時に1回すぐ同期
   autoSyncFromGAS();
-  // 1分ごとに他端末の更新を確認
+  // 5分ごとに繰り返し
   if (autoSyncInterval) clearInterval(autoSyncInterval);
-  autoSyncInterval = setInterval(autoSyncFromGAS, 60 * 1000);
-  // タブがアクティブに戻った時にも同期確認
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') autoSyncFromGAS();
-  });
+  autoSyncInterval = setInterval(autoSyncFromGAS, 5 * 60 * 1000);
 }
 
 // ===================== CSV書き出し =====================
@@ -6972,8 +7254,14 @@ function renderPatrolSlide() {
 
 // ===================== INIT（削除禁止）=====================
 load(); applyColors(); renderDisplay(); applyPinPage(); if(!isPinned) resetSlideTimer();
-// 端末間の自動同期を有効化（起動時に1回取得＋以後1分ごと、入力後は自動送信）
-startAutoSync();
+// Firestore からヒヤリハット報告を取得してキャッシュ
+if (window.FS_READY) {
+  refreshNMReports();
+} else {
+  document.addEventListener('fs-ready', () => refreshNMReports(), { once: true });
+}
+// 自動同期はバックアップ成功後のみ有効（GASにデータがある場合のみ同期）
+// startAutoSync(); // 初回同期はバックアップ後に手動で有効化
 
 </script>
 <div id="backup-reminder" style="display:none;position:fixed;top:0;left:0;right:0;z-index:250;background:linear-gradient(90deg,rgba(66,133,244,.9),rgba(52,168,83,.9));padding:8px 20px;align-items:center;gap:12px;font-size:13px;">
@@ -6983,5 +7271,83 @@ startAutoSync();
 </div>
 <textarea id="a-reporters" style="display:none"></textarea>
 <textarea id="a-departments" style="display:none"></textarea>
+
+<!-- ========== スマホ対応スクリプト（ナビメニュー・＋ボタン） ========== -->
+<script>
+(function(){
+  function isMobileLayout(){ return window.matchMedia('(max-width:768px)').matches; }
+
+  /* ── ハンバーガーメニュー ── */
+  function buildNavMenu(){
+    var list=document.getElementById('nav-menu-list'); if(!list) return;
+    list.innerHTML='';
+    document.querySelectorAll('#nav-inner .nav-btn').forEach(function(b,i){
+      var ic=b.querySelector('.nav-btn-icon'), lb=b.querySelector('.nav-btn-label');
+      var el=document.createElement('button');
+      el.type='button';
+      el.className='nav-menu-item'+(b.classList.contains('active')?' active':'');
+      el.innerHTML='<span class="nmi-icon">'+(ic?ic.textContent:'')+'</span><span>'+(lb?lb.textContent:'')+'</span>';
+      el.onclick=function(){ goTo(i); closeNavMenu(); };
+      list.appendChild(el);
+    });
+  }
+  function updateMobileNav(){
+    var c=document.getElementById('nav-current'); if(!c) return;
+    var lb=document.querySelector('#nav-inner .nav-btn.active .nav-btn-label');
+    c.textContent=lb?lb.textContent:'';
+    var m=document.getElementById('nav-menu');
+    if(m && m.classList.contains('open')) buildNavMenu();
+  }
+  window.toggleNavMenu=function(){
+    var m=document.getElementById('nav-menu'); if(!m) return;
+    if(m.classList.contains('open')){ closeNavMenu(); }
+    else { buildNavMenu(); m.classList.add('open'); closeFab(); }
+  };
+  window.closeNavMenu=function(){
+    var m=document.getElementById('nav-menu'); if(m) m.classList.remove('open');
+  };
+
+  /* ── 「＋」ボタン（入力ボタン展開） ── */
+  window.toggleFab=function(){
+    var g=document.getElementById('fab-group'), bd=document.getElementById('fab-backdrop');
+    if(!g) return;
+    var open=!g.classList.contains('open');
+    g.classList.toggle('open',open);
+    if(bd) bd.classList.toggle('show',open);
+  };
+  window.closeFab=function(){
+    var g=document.getElementById('fab-group'), bd=document.getElementById('fab-backdrop');
+    if(g) g.classList.remove('open');
+    if(bd) bd.classList.remove('show');
+  };
+  ['nm-fab','training-fab','patrol-fab','insp-fab'].forEach(function(id){
+    var b=document.getElementById(id);
+    if(b) b.addEventListener('click',function(){ if(isMobileLayout()) closeFab(); });
+  });
+
+  /* ── 既存 goTo / applyLang に後処理を追加（元の動作は変更しない） ── */
+  if(typeof goTo==='function'){
+    var _goTo=goTo;
+    window.goTo=function(n){
+      _goTo(n);
+      updateMobileNav();
+      if(isMobileLayout()) window.scrollTo(0,0);
+    };
+  }
+  if(typeof applyLang==='function'){
+    var _applyLang=applyLang;
+    window.applyLang=function(){
+      var r=_applyLang.apply(this,arguments);
+      updateMobileNav();
+      return r;
+    };
+  }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){ closeNavMenu(); closeFab(); }
+  });
+  window.addEventListener('resize',function(){ if(!isMobileLayout()){ closeNavMenu(); closeFab(); } });
+  updateMobileNav();
+})();
+</script>
 </body>
 </html>
