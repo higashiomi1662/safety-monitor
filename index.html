@@ -1623,6 +1623,26 @@ body.mode-app #slides .nm-no-data{ min-height:96px; font-size:var(--fs-md); lett
 body.mode-app #slides .nm-chart-card{ border-radius:var(--r-lg); }
 body.mode-app #slides .nm-chart-title{ letter-spacing:0; }
 body.mode-app #slides .nm-sync-lbl{ font-size:var(--fs-sm); }
+
+/* ---------- 組織図：スマホは縦のツリー（階層ごとにインデント＋左線、横線は隠す） ---------- */
+body.mode-app #slides .org-layout{ padding:var(--sp-2) 0; }
+body.mode-app #slides .org-box-name{ font-size:var(--fs-md); }
+@media (max-width:599px){
+  body.mode-app #slides .org-layout{ align-items:stretch; gap:0; }
+  body.mode-app #slides .org-vline{ display:none; }
+  body.mode-app #slides .org-row::before{ display:none; }
+  body.mode-app #slides .org-row{
+    flex-direction:column; align-items:stretch; gap:var(--sp-2); width:auto;
+    margin-left:calc(var(--org-lv, 0) * 20px); padding:var(--sp-2) 0;
+  }
+  body.mode-app #slides .org-row:not([data-lv="0"]){ border-left:2px solid var(--c-line); padding-left:var(--sp-3); }
+  body.mode-app #slides .org-col{ align-items:stretch; }
+  body.mode-app #slides .org-box{
+    min-width:0; max-width:none; padding:var(--sp-2) var(--sp-3); text-align:left;
+    border-radius:var(--r-md); border-width:1px;
+  }
+  body.mode-app #slides .org-box-name{ font-size:var(--fs-md); }
+}
 </style>
 <style id="app-ui">
 /* ===================================================================
@@ -5099,11 +5119,13 @@ function renderDisplay() {
       const lv = o.level !== undefined ? o.level : 0;
       return '<div class="org-col">'
         + '<div class="org-box lv'+lv+'">'
-        + '<div class="org-box-role">'+o.role+'</div>'
-        + '<div class="org-box-name">'+o.name+'</div>'
-        + (o.note ? '<div class="org-box-note">'+o.note+'</div>' : '')
+        + '<div class="org-box-role">'+planEsc(o.role)+'</div>'
+        + '<div class="org-box-name">'+planEsc(o.name)+'</div>'
+        + (o.note ? '<div class="org-box-note">'+planEsc(o.note)+'</div>' : '')
         + '</div></div>';
     }
+    // 行に階層番号を付ける（スマホでは --org-lv でインデントした縦ツリーにする）
+    const rowAttr = (lv, extra) => ' data-lv="'+lv+'" style="--org-lv:'+lv+(extra ? ';'+extra : '')+'"';
     for(let lv=0; lv<=maxLv; lv++) {
       const items = levels[lv] || [];
       if(!items.length) continue;
@@ -5112,15 +5134,15 @@ function renderDisplay() {
         html += '<div class="org-vline"></div>';
         if(items.length > 1) {
           // 複数ボックス：横線 + 各縦線
-          const w = Math.round(100 - 100/items.length);
-          html += '<div class="org-row" style="--line-left:'+Math.round(50/items.length)+'%;--line-right:'+Math.round(50/items.length)+'%">';
+          const edge = Math.round(50/items.length)+'%';
+          html += '<div class="org-row"'+rowAttr(lv, '--line-left:'+edge+';--line-right:'+edge)+'>';
           items.forEach(o => html += makeBox(o));
           html += '</div>';
         } else {
-          html += '<div class="org-row no-hline">' + makeBox(items[0]) + '</div>';
+          html += '<div class="org-row no-hline"'+rowAttr(lv)+'>' + makeBox(items[0]) + '</div>';
         }
       } else {
-        html += '<div class="org-row no-hline">' + makeBox(items[0]) + '</div>';
+        html += '<div class="org-row no-hline"'+rowAttr(lv)+'>' + makeBox(items[0]) + '</div>';
       }
     }
     el.innerHTML = html;

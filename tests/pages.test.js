@@ -312,3 +312,33 @@ describe('ヒヤリハット分析ページ', () => {
     expect(html).not.toMatch(/showNoData\(/)
   })
 })
+
+// ===================== 組織図 =====================
+describe('組織図ページ', () => {
+  it('階層ごとの行に階層番号を付ける（スマホの縦ツリー用）', () => {
+    app = loadApp({ width: 390 })
+    const { win, doc } = app
+    win.D.orgChart = [
+      { level: 0, role: '総括安全衛生管理者', name: '社長' },
+      { level: 1, role: '安全管理者', name: 'A' },
+      { level: 1, role: '衛生管理者', name: 'B', note: '兼務' },
+      { level: 2, role: '職長', name: 'C' },
+    ]
+    win.renderDisplay()
+    const rows = [...doc.querySelectorAll('#d-org-layout .org-row')]
+    expect(rows.map((r) => r.dataset.lv)).toEqual(['0', '1', '2'])
+    expect(rows.map((r) => r.style.getPropertyValue('--org-lv'))).toEqual(['0', '1', '2'])
+    expect(rows[1].querySelectorAll('.org-box').length).toBe(2)
+    expect(rows[1].textContent).toContain('兼務')
+  })
+
+  it('スマホでは横線を隠し、インデントと左線の縦ツリーにする CSS がある', () => {
+    app = loadApp()
+    const css = app.doc.getElementById('ui-pages').textContent
+    const phone = css.slice(css.indexOf('/* ---------- 組織図'))
+    expect(phone).toMatch(/@media \(max-width:599px\)/)
+    expect(phone).toMatch(/body\.mode-app #slides \.org-row::before\{\s*display:none/)
+    expect(phone).toMatch(/var\(--org-lv/)
+    expect(phone).toMatch(/border-left:2px solid/)
+  })
+})
