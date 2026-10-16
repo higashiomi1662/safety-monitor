@@ -1,4 +1,4 @@
-const CACHE_NAME = 'safety-monitor-v158';
+const CACHE_NAME = 'safety-monitor-v177';
 const URLS = ['/safety-monitor/'];
 
 self.addEventListener('install', e => {
