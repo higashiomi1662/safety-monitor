@@ -4493,7 +4493,9 @@ function ensurePlanDetails(){
   const mq = window.matchMedia('(max-width:599px)');
   det.open = !mq.matches;
   // スマホ幅からタブレット幅以上に広げたときは開く（見出しを隠すため）
-  mq.addEventListener('change', e => { if(!e.matches) det.open = true; });
+  const onWiden = e => { if(!e.matches) det.open = true; };
+  if(mq.addEventListener) mq.addEventListener('change', onWiden);
+  else if(mq.addListener) mq.addListener(onWiden); // 古い Safari 向け
 }
 // 表示時に今月の列が見える位置まで横スクロールする（先頭の固定列の幅と 1 か月分の余白を引く）
 function scrollPlanToCurrentMonth(){
