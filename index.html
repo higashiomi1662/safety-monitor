@@ -4167,7 +4167,7 @@ function doGet(e) {
     <!-- 組織図 -->
     <div class="adm-section">
       <div class="adm-sec-hdr" onclick="toggleSection(this)"><span>📋 ヒヤリハット報告 受信ボックス</span><span class="arrow">▾</span></div>
-      <div class="adm-sec-body" id="sec-nm-reports">
+      <div class="adm-sec-body" id="sec-nm-reports" data-adm-nodirty>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <span style="font-size:16px;color:var(--sub)">モニター上のボタンから送信された報告が表示されます</span>
           <button onclick="clearReports()" class="btn-del" style="font-size:15px;padding:6px 14px">全件削除</button>
@@ -4335,8 +4335,16 @@ function adminPinLockRemaining(now = Date.now()) {
   return st.until > now ? Math.ceil((st.until - now) / 1000) : 0;
 }
 function adminPinLockMsg(sec) { return 'PINを5回まちがえました。あと' + sec + '秒待ってください'; }
-// Firestore（safety/main）の最初の読み込みが終わっていない間は、PIN 未設定と判断しない
-function adminPinSyncing() { return !!window.FS && !window.FS_MAIN_LOADED; }
+// Firestore（safety/main）の最初の読み込みが終わっていない間は、PIN 未設定と判断しない。
+// Firebase のスクリプトは読み込みに時間がかかるため、window.FS ができる前も「同期中」とみなす。
+// 通信できず Firebase が読み込めない場合に開けなくならないよう、10秒で待つのをやめる。
+let adminPinSyncGaveUp = false;
+function adminPinGiveUpSync() { adminPinSyncGaveUp = true; }
+setTimeout(adminPinGiveUpSync, 10000);
+function adminPinSyncing() {
+  if (window.FS_MAIN_LOADED || adminPinSyncGaveUp) return false;
+  return !!window.FS || !!document.getElementById('firebase-init-module');
+}
 async function adminPinVerify(pin) {
   if (!adminPinIsSet()) return false;
   return (await adminPinHash(pin, D.adminPin.salt)) === D.adminPin.hash;
@@ -4348,7 +4356,8 @@ function requireAdminPin(callback) {
   if (adminPinIsUnlocked()) { run(); return true; }
   if (adminPinSyncing()) { showToast('データを同期中です。数秒後にもう一度お試しください'); return false; }
   if (!adminPinIsSet()) { run(); return true; }
-  if (!adminPinSupported()) { showToast('この環境ではPINを使えません'); run(); return true; }
+  // PIN が設定されているのに確認できない環境では、開かない（PIN なしで通さない）
+  if (!adminPinSupported()) { showToast('この環境ではPINを確認できないため開けません'); return false; }
   openPinDialog(callback);
   return false;
 }
@@ -4573,6 +4582,7 @@ function openAdminNow() {
   a.classList.remove('is-detail');
   a.style.display = '';
   a.classList.add('open');
+  clearInterval(timer); // 掲示モードの自動送りを止める
   admTakeSnapshot();
   admSetDirty(false);
   admSpy();
@@ -4588,6 +4598,7 @@ function closeAdminNow() {
   }
   a.classList.remove('open', 'is-detail');
   a.style.display = '';
+  if (!isAnySheetOpen()) resetSlideTimer();
   return true;
 }
 
@@ -5372,7 +5383,7 @@ function load() {
         });
       }
       // localStorageにもキャッシュして次回起動を高速化
-      try { localStorage.setItem('safety_data_v93', JSON.stringify(saved)); } catch(e2){}
+      try { localStorage.setItem('safety_data_v93', JSON.stringify(saved)); } catch(e2){ console.warn('[FS] 端末への保存に失敗しました', e2); }
       applyColors(); renderDisplay();
       console.log('[FS] Firestore データで画面を更新しました');
     } catch(e) { console.warn('[FS] _applyFS error:', e); }
@@ -7193,7 +7204,8 @@ function openQR() {
   openSheet('qr-modal');
 
   // # 以降（表示中のページ）は含めず、アプリの入口URLにする
-  const url = window.location.href.split('#')[0];
+  // ?kiosk=1 や ?v= を含めると、読み取ったスマホが掲示モードになってしまうため入口 URL だけにする
+  const url = location.protocol === 'file:' ? location.href.split(/[?#]/)[0] : location.origin + location.pathname;
   document.getElementById('qr-url-text').textContent = url;
   document.getElementById('qr-url-label').textContent =
     url.startsWith('file://') ? '⚠ ローカルファイルです。Netlifyに公開後にスキャンできます。' : '📱 このQRコードをスキャンしてアクセス';
@@ -7236,7 +7248,7 @@ function removeLegalInsp(i) {
   renderLegalAdm();
 }
 function renderLegalAdm() {
-  const equipOpts = D.inspections.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  const equipOpts = D.inspections.map(p=>`<option value="${planEsc(p.name)}">${planEsc(p.name)}</option>`).join('');
   const typeOpts  = Object.entries(LEGAL_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   const resOpts   = Object.entries(LEGAL_RESULTS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   const list = document.getElementById('legal-adm-list');
@@ -7769,7 +7781,7 @@ function toggleLang() {
 
 function toggleMcCheck(idx, storeKey, labelEl) {
   let saved = {};
-  try { saved = JSON.parse(localStorage.getItem(storeKey)||'{}'); } catch(e){}
+  try { saved = JSON.parse(localStorage.getItem(storeKey)||'{}'); } catch(e){ console.warn('[月次確認] 保存済みチェックを読めません', e); }
   saved[idx] = !saved[idx];
   localStorage.setItem(storeKey, JSON.stringify(saved));
   // Firestore にも保存
@@ -8015,13 +8027,13 @@ function renderOrgAdm() {
       ${admCell('役職', `<input type="text" id="org-role-${i}" value="${planEsc(o.role)}" placeholder="役職名" class="adm-input">`)}
       ${admCell('氏名', `<select id="org-name-${i}" class="adm-input">
         <option value="">— 選択 —</option>
-        ${(D.reporters||[]).map(r=>`<option value="${r}" ${o.name===r?'selected':''}>${r}</option>`).join('')}
-        <option value="${o.name}" ${!(D.reporters||[]).includes(o.name)&&o.name?'selected':''} style="color:var(--sub)">${!(D.reporters||[]).includes(o.name)&&o.name?o.name+'（リスト外）':''}</option>
+        ${(D.reporters||[]).map(r=>`<option value="${planEsc(r)}" ${o.name===r?'selected':''}>${planEsc(r)}</option>`).join('')}
+        <option value="${planEsc(o.name)}" ${!(D.reporters||[]).includes(o.name)&&o.name?'selected':''} style="color:var(--sub)">${planEsc(!(D.reporters||[]).includes(o.name)&&o.name?o.name+'（リスト外）':'')}</option>
       </select>`)}
       ${admCell('部門', `<select id="org-note-${i}" class="adm-input">
         <option value="">— 部門選択 —</option>
-        ${(D.departments||[]).map(d=>`<option value="${d}" ${o.note===d?'selected':''}>${d}</option>`).join('')}
-        ${(o.note&&!(D.departments||[]).includes(o.note))?`<option value="${o.note}" selected>${o.note}</option>`:''}
+        ${(D.departments||[]).map(d=>`<option value="${planEsc(d)}" ${o.note===d?'selected':''}>${planEsc(d)}</option>`).join('')}
+        ${(o.note&&!(D.departments||[]).includes(o.note))?`<option value="${planEsc(o.note)}" selected>${planEsc(o.note)}</option>`:''}
       </select>`)}
       ${admCell('', `<button class="btn-del" onclick="removeOrg(${i})">削除</button>`, 'adm-cell-act')}
     </div>`).join('');
@@ -8053,7 +8065,7 @@ function removeOrg(i) {
 
 function renderRaAdm() {
   const reps = [''].concat(D.reporters||[]);
-  const repOpts = reps.map(r=>`<option value="${r}">${r||'担当者未定'}</option>`).join('');
+  const repOpts = reps.map(r=>`<option value="${planEsc(r)}">${planEsc(r||'担当者未定')}</option>`).join('');
   document.getElementById('ra-adm-list').innerHTML=(D.raItems||[]).map((item,i)=>`
     <div class="adm-card">
       <div class="adm-grid" style="--cols:2fr 1fr 1fr auto">
@@ -8197,9 +8209,9 @@ function populateSelect(selId, currentVal) {
   if (!sel) return;
   const reporters = D.reporters || [];
   sel.innerHTML = '<option value="">— 選択 —</option>' +
-    reporters.map(r => `<option value="${r}"${r===currentVal?' selected':''}>${r}</option>`).join('');
+    reporters.map(r => `<option value="${planEsc(r)}"${r===currentVal?' selected':''}>${planEsc(r)}</option>`).join('');
   if (currentVal && !reporters.includes(currentVal)) {
-    sel.innerHTML += `<option value="${currentVal}" selected>${currentVal}（リスト外）</option>`;
+    sel.innerHTML += `<option value="${planEsc(currentVal)}" selected>${planEsc(currentVal)}（リスト外）</option>`;
   }
 }
 
@@ -8462,13 +8474,13 @@ function renderNMReports() {
     <div class="report-card">
       <div class="report-card-hdr">
         <div>
-          <div class="report-card-loc">📍 ${r.loc||'場所未記入'} ／ ${r.type||'種類未選択'}</div>
-          <div class="report-card-meta">🏢 ${r.dept||'部門未記入'} ／ 🕐 ${r.dt||'—'} ／ 報告者：${r.name||'匿名'}</div>
+          <div class="report-card-loc">📍 ${planEsc(r.loc||'場所未記入')} ／ ${planEsc(r.type||'種類未選択')}</div>
+          <div class="report-card-meta">🏢 ${planEsc(r.dept||'部門未記入')} ／ 🕐 ${planEsc(r.dt||'—')} ／ 報告者：${planEsc(r.name||'匿名')}</div>
         </div>
         <button class="btn-del" style="font-size:14px;padding:4px 10px" onclick="deleteReport(${reports.length-1-i})">削除</button>
       </div>
-      <div class="report-card-body">${(r.desc||'').replace(/\n/g,'<br>')}</div>
-      ${r.comment?`<div style="margin-top:6px;font-size:16px;color:var(--sub)">💡 ${r.comment}</div>`:''}
+      <div class="report-card-body">${planEsc(r.desc||'').replace(/\n/g,'<br>')}</div>
+      ${r.comment?`<div style="margin-top:6px;font-size:16px;color:var(--sub)">💡 ${planEsc(r.comment)}</div>`:''}
       ${_nmPhotoHtml(r)}
     </div>`).join('');
 }
@@ -8481,7 +8493,7 @@ function getNMReports() {
 }
 function saveNMReports(arr) {
   _nmCache = arr;
-  try { localStorage.setItem('nm_reports', JSON.stringify(arr)); } catch(e){}
+  try { localStorage.setItem('nm_reports', JSON.stringify(arr)); } catch(e){ console.warn('[NM] 端末への保存に失敗しました', e); }
 }
 // 表示用の写真ソース：Storage のURLを優先し、無ければ端末内の base64 を使う
 function _nmPhotoSrcs(r) {
@@ -8492,7 +8504,7 @@ function _nmPhotoHtml(r) {
   const ph = _nmPhotoSrcs(r);
   if (!ph.length) return '';
   return '<div class="report-photos">' +
-    ph.map(p => '<img src="' + p + '" onclick="window.open(\'' + p + '\')">').join('') +
+    ph.map(p => '<img src="' + planEsc(p) + '" alt="報告写真" onclick="window.open(this.src)">').join('') +
     '</div>';
 }
 // Firestore から最新を取得してキャッシュ＆再描画
@@ -8500,7 +8512,7 @@ function refreshNMReports() {
   if (!window.FS) return;
   window.FS.fsGetNMReports().then(arr => {
     _nmCache = arr;
-    try { localStorage.setItem('nm_reports', JSON.stringify(arr)); } catch(e){}
+    try { localStorage.setItem('nm_reports', JSON.stringify(arr)); } catch(e){ console.warn('[NM] 端末への保存に失敗しました', e); }
     renderNMReports();
   }).catch(e => console.warn('[FS] refreshNM error:', e));
 }
@@ -8823,10 +8835,12 @@ function startKiosk() {
   catch (e) { console.warn('[mode] 表示モードを保存できません', e); }
   location.replace(location.pathname + '?kiosk=1');
 }
+// 掲示モード終了後に開く URL（?kiosk=0 を残すとブックマークされたときに掲示モードへ戻れなくなる）
+function kioskExitUrl() { return location.pathname + '#/'; }
 function exitKiosk() {
   try { localStorage.removeItem(MODE_KEY); }
   catch (e) { console.warn('[mode] 表示モードを解除できません', e); }
-  location.replace(location.pathname + '?kiosk=0#/');
+  location.replace(kioskExitUrl());
 }
 function isKiosk() {
   if (new URLSearchParams(location.search).get('kiosk') === '0') return false;
@@ -8980,11 +8994,11 @@ function openNM() {
   const sel = document.getElementById('nm-name');
   sel.innerHTML = '<option value="">-- 選択してください --</option>' +
     '<option value="匿名">匿名</option>' +
-    (D.reporters||[]).map(r=>`<option value="${r}">${r}</option>`).join('');
+    (D.reporters||[]).map(r=>`<option value="${planEsc(r)}">${planEsc(r)}</option>`).join('');
   const dsel = document.getElementById('nm-dept');
   if (dsel) {
     dsel.innerHTML = '<option value="">選択</option>' +
-      (D.departments||[]).map(d=>`<option value="${d}">${d}</option>`).join('');
+      (D.departments||[]).map(d=>`<option value="${planEsc(d)}">${planEsc(d)}</option>`).join('');
   }
   document.getElementById('nm-form-section').style.display='';
   document.getElementById('nm-success').classList.remove('show');
@@ -9283,11 +9297,11 @@ function openInspDetail(idx) {
   // reporter dropdown
   const rsel = document.getElementById('insp-reporter');
   rsel.innerHTML = '<option value="">選択</option>' +
-    (D.reporters||[]).map(r=>`<option value="${r}">${r}</option>`).join('');
+    (D.reporters||[]).map(r=>`<option value="${planEsc(r)}">${planEsc(r)}</option>`).join('');
   // dept dropdown
   const dsel = document.getElementById('insp-dept');
   dsel.innerHTML = '<option value="">選択</option>' +
-    (D.departments||['製造部','品質管理課','設備管理課','安全管理部','総務部']).map(d=>`<option value="${d}">${d}</option>`).join('');
+    (D.departments||['製造部','品質管理課','設備管理課','安全管理部','総務部']).map(d=>`<option value="${planEsc(d)}">${planEsc(d)}</option>`).join('');
 
   // checkpoints rendered above in tab logic
   if (!hasTabs) {
@@ -9994,7 +10008,7 @@ function openImprovementModal(repIdx, itemIdx) {
   // 担当者select populate
   const sel = document.getElementById('improvement-reporter');
   sel.innerHTML = '<option value="">選択</option>' +
-    (D.reporters||[]).map(r => `<option value="${r}"${r===item.improvementReporter?' selected':''}>${r}</option>`).join('');
+    (D.reporters||[]).map(r => `<option value="${planEsc(r)}"${r===item.improvementReporter?' selected':''}>${planEsc(r)}</option>`).join('');
 
   // 指摘内容ラベル
   document.getElementById('improvement-issue-label').innerHTML =
@@ -10765,7 +10779,7 @@ async function checkForUpdate(opts = {}) {
       return false;
     }
     setUpdateAvailable(latest);
-    if (opts.auto && !userInteracted && !isAnySheetOpen() && !isAdminOpen()) await applyUpdate({ skipConfirm:true });
+    if (opts.auto && !userInteracted && !isAnySheetOpen() && !isAdminOpen() && !updateTriedFor(latest)) await applyUpdate({ skipConfirm:true });
     return true;
   } catch (e) {
     console.warn('[update] 新しい版を確認できません', e);
@@ -10779,8 +10793,16 @@ async function clearAppCaches() {
   await Promise.all(keys.map(k => window.caches.delete(k)));
   return keys.length;
 }
+// 同じ版への自動切り替えを試したか（古いファイルが返され続けても読み込みを繰り返さないため）
+const UPDATE_TRIED_KEY = 'sm_update_tried';
+function updateTriedFor(v) {
+  try { return sessionStorage.getItem(UPDATE_TRIED_KEY) === v; }
+  catch (e) { console.warn('[update] 試行記録を読めません', e); return false; }
+}
 async function applyUpdate(opts = {}) {
   if (!opts.skipConfirm && (isAnySheetOpen() || isAdminOpen()) && !confirm(ut('confirmUpdate'))) return;
+  try { if (updateState.latest) sessionStorage.setItem(UPDATE_TRIED_KEY, updateState.latest); }
+  catch (e) { console.warn('[update] 試行記録を保存できません', e); }
   updateState.state = 'updating';
   renderHeader();
   try {
@@ -10819,8 +10841,13 @@ function initAppShell() {
     const display = document.getElementById('display');
     if (display) display.hidden = false;
     // 掲示モード：新しい版はページが切り替わる合間に読み込み直す
-    document.addEventListener('page-shown', () => { if (updateState.state === 'available') applyUpdate({ skipConfirm:true }); });
-    setInterval(() => checkForUpdate(), 30 * 60 * 1000);
+    const kioskAutoUpdate = () => {
+      if (updateState.state === 'available' && !isAdminOpen() && !isAnySheetOpen() && !updateTriedFor(updateState.latest))
+        applyUpdate({ skipConfirm:true });
+    };
+    document.addEventListener('page-shown', kioskAutoUpdate);
+    // 固定表示中はページが切り替わらないので、確認のたびにも適用を試みる
+    setInterval(() => checkForUpdate().then(kioskAutoUpdate), 30 * 60 * 1000);
   } else {
     window.addEventListener('hashchange', renderRoute);
     // データの再描画・言語切替のあとはハブとヘッダーを描き直す

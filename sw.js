@@ -38,7 +38,12 @@ self.addEventListener('fetch', (e) => {
       .then((res) => {
         if (res.ok) {
           const copy = res.clone()
-          caches.open(CACHE_NAME).then((c) => c.put(req, copy))
+          e.waitUntil(
+            caches
+              .open(CACHE_NAME)
+              .then((c) => c.put(req, copy))
+              .catch((err) => console.warn('[sw] キャッシュに保存できません', err)),
+          )
         }
         return res
       })

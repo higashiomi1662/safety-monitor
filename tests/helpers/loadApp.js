@@ -86,6 +86,8 @@ export const loadApp = (opts = {}) => {
       for (const [k, v] of Object.entries(opts.localStorage ?? {})) win.localStorage.setItem(k, v)
       for (const [k, v] of Object.entries(opts.sessionStorage ?? {})) win.sessionStorage.setItem(k, v)
       win.addEventListener('error', (e) => errors.push(e.error ?? e.message))
+      // テストでは Firebase を読み込まないので、最初の同期は終わったものとして扱う（必要なテストは false に上書き）
+      win.FS_MAIN_LOADED = true
       opts.beforeParse?.(win)
     },
   })

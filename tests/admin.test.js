@@ -151,6 +151,7 @@ describe('PIN ロック', () => {
           fsGetNMReports: () => Promise.resolve([]),
         }
         win.FS_READY = true
+        win.FS_MAIN_LOADED = false
       },
     })
     const { win, doc } = app
