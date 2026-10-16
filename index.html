@@ -413,11 +413,7 @@ body.mode-kiosk .slide.active { opacity:1; pointer-events:auto; }
 .legal-norecord { font-size:14px; color:var(--sub); padding:20px; text-align:center; }
 
 /* 法令点検 PDFビューアモーダル */
-#legal-pdf-modal {
-  position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.85);
-  display:none; flex-direction:column; align-items:center; justify-content:center;
-}
-#legal-pdf-modal.show { display:flex; }
+/* 入力シートの外枠（表示・重なり・背景）は <style id="ui-sheets"> で定義 */
 .legal-pdf-modal-inner {
   background:#EDF1F6; border:1px solid rgba(0,0,0,.12);
   border-radius:8px; width:90vw; height:90vh;
@@ -561,18 +557,7 @@ body.mode-kiosk .slide.active { opacity:1; pointer-events:auto; }
 .sync-indicator.diff { background:rgba(245,168,0,.12);  color:var(--gold); }
 
 /* ===================== NEAR-MISS REPORT MODAL ===================== */
-#training-modal {
-  display:none; position:fixed; inset:0; z-index:9500;
-  background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
-  align-items:center; justify-content:center; overflow-y:auto; padding:16px;
-}
-#training-modal.open { display:flex; }
-#nm-modal {
-  display:none; position:fixed; inset:0; z-index:99999;
-  background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
-  align-items:center; justify-content:center;
-}
-#nm-modal.open { display:flex; }
+/* 入力シートの外枠（表示・重なり・背景）は <style id="ui-sheets"> で定義 */
 .nm-box {
   background:#FFFFFF; border:1px solid rgba(0,0,0,.10);
   border-top:3px solid var(--accent);
@@ -802,8 +787,7 @@ body.mode-kiosk .slide.active { opacity:1; pointer-events:auto; }
 .ic-photo-thumb img { width:100%; max-height:55px; object-fit:cover; border-radius:3px; border:1px solid rgba(0,0,0,.07); }
 
 /* 点検入力モーダル */
-#insp-modal { display:none; position:fixed; inset:0; z-index:9500; background:rgba(0,0,0,.8); backdrop-filter:blur(6px); align-items:center; justify-content:center; }
-#insp-modal.open { display:flex; }
+/* 入力シートの外枠（表示・重なり・背景）は <style id="ui-sheets"> で定義 */
 .insp-box { background:#FFFFFF; border:1px solid rgba(0,0,0,.10); border-top:3px solid var(--primary); border-radius:8px; width:min(700px,95vw); max-height:92vh; overflow-y:auto; padding:28px 32px; display:flex; flex-direction:column; gap:16px; }
 .insp-box h2 { font-size:15px; font-weight:700; letter-spacing:3px; color:var(--gold); }
 .insp-box h2 span { font-size:15px; color:var(--sub); font-weight:400; letter-spacing:1px; margin-left:8px; }
@@ -914,18 +898,7 @@ body.mode-kiosk #pbar { display:block; position:fixed; bottom:64px; left:0; heig
 .slide.active .ai-layout { animation:fadeUp .6s .2s both; }
 
 /* patrol-modal / training-modal */
-#patrol-modal {
-  display:none; position:fixed; inset:0; z-index:9500;
-  background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
-  overflow-y:auto; padding:16px;
-}
-#patrol-modal.open { display:block; }
-#training-modal {
-  display:none; position:fixed; inset:0; z-index:9500;
-  background:rgba(0,0,0,.75); backdrop-filter:blur(6px);
-  align-items:center; justify-content:center; overflow-y:auto; padding:16px;
-}
-#training-modal.open { display:flex; }
+/* 入力シートの外枠（表示・重なり・背景）は <style id="ui-sheets"> で定義 */
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1993,6 +1966,228 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
   #app-sidebar, #app-header, #app-tabbar{ display:none !important; }
 }
 </style>
+<style id="ui-sheets">
+/* ===================================================================
+   入力シート（モーダル）— openSheet(id) / closeSheet(id) で .is-open を付け外しする
+   スマホ（〜599px）は全画面（上に固定ヘッダー・下に固定の主ボタン）、600px〜 は中央のダイアログ
+   =================================================================== */
+/* 管理画面から開くシート（名簿・Excel・ドライブ・QR・PDF）を管理画面より前に出す */
+#admin{ z-index:var(--z-admin); }
+body.sheet-open{ overflow:hidden; }
+
+.sheet{
+  display:none; position:fixed; inset:0; z-index:var(--z-sheet);
+  background:rgba(16,24,40,.55);
+  font-family:var(--font-ui); color:var(--c-ink); line-height:1.6;
+}
+.sheet.is-open{ display:flex; align-items:stretch; justify-content:center; }
+.sheet .sheet-panel{
+  position:relative; display:flex; flex-direction:column; gap:0; box-sizing:border-box;
+  width:100%; max-width:none; height:100%; max-height:none; margin:0; padding:0;
+  background:var(--c-surface); border:0; border-radius:0; box-shadow:none; text-align:left;
+  overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+}
+/* 入力・完了など、パネル内で切り替える区画 */
+.sheet .sheet-flow{ display:flex; flex-direction:column; flex:1 0 auto; }
+
+/* ---------- ヘッダー（× 閉じる＋タイトル） ---------- */
+.sheet .sheet-head{
+  position:sticky; top:0; z-index:2; flex-shrink:0;
+  display:flex; align-items:center; gap:var(--sp-1);
+  min-height:60px; padding:6px var(--sp-2); box-sizing:border-box;
+  padding-top:max(6px, env(safe-area-inset-top));
+  background:var(--c-surface); border-bottom:1px solid var(--c-line);
+}
+.sheet .sheet-close{
+  width:var(--tap); height:var(--tap); flex-shrink:0; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  border:0; border-radius:var(--r-md); background:transparent; color:var(--c-ink); cursor:pointer;
+}
+.sheet .sheet-close:hover{ background:var(--c-neutral-bg); }
+.sheet .sheet-title{
+  flex:1; min-width:0; margin:0; font-size:19px; font-weight:700; line-height:1.35;
+  letter-spacing:0; color:var(--c-ink);
+}
+.sheet .sheet-title span{ display:block; margin:0; font-size:13px; font-weight:400; letter-spacing:0; color:var(--c-sub); }
+.sheet .sheet-title:focus:not(:focus-visible){ outline:none; }
+.sheet-head-meta{ flex-shrink:0; padding:0 var(--sp-1); font-size:var(--fs-sm); color:var(--c-sub); white-space:nowrap; }
+.sheet-head-meta:empty{ display:none; }
+
+/* ---------- 本文 ---------- */
+.sheet .sheet-body{ flex:1 0 auto; display:flex; flex-direction:column; gap:var(--sp-4); padding:var(--sp-4); }
+.sheet .sheet-section-title{ margin:var(--sp-2) 0 0; padding:0; border:0; font-size:var(--fs-md); font-weight:700; letter-spacing:0; color:var(--c-ink); }
+.sheet .sheet-section-ok{ color:var(--c-ok); }
+.sheet .sheet-grid-2, .sheet .sheet-grid-3, .sheet .nm-row{ display:grid; grid-template-columns:minmax(0, 1fr); gap:var(--sp-4); }
+.sheet-issue{ padding:var(--sp-2) var(--sp-3); background:var(--c-danger-bg); border-left:4px solid var(--c-danger); border-radius:var(--r-sm); font-size:var(--fs-sm); color:var(--c-ink); }
+.sheet-issue:empty{ display:none; }
+
+/* ---------- 下部の主ボタン領域 ---------- */
+.sheet .sheet-foot{
+  position:sticky; bottom:0; z-index:2; flex-shrink:0; margin:auto 0 0;
+  display:flex; gap:var(--sp-2); justify-content:stretch;
+  padding:var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  background:var(--c-surface); border-top:1px solid var(--c-line);
+}
+.sheet .sheet-foot .sheet-btn{ flex:1; }
+.sheet .sheet-btn{
+  min-height:52px; padding:0 var(--sp-5); box-sizing:border-box;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  border:1px solid var(--c-field-line); border-radius:var(--r-md); background:var(--c-surface); color:var(--c-ink);
+  font:inherit; font-size:var(--fs-md); font-weight:700; letter-spacing:0; line-height:1.3; cursor:pointer;
+}
+.sheet .sheet-btn-primary{ background:var(--c-info); border-color:var(--c-info); color:#fff; }
+.sheet .sheet-btn-ok{ background:var(--c-ok); border-color:var(--c-ok); color:#fff; }
+.sheet .sheet-btn-report{ min-height:60px; background:var(--c-report); border-color:var(--c-report); color:#fff; font-size:18px; }
+.sheet .sheet-btn:disabled{ background:var(--c-neutral-bg); border-color:var(--c-line); color:var(--c-ink-2); cursor:progress; }
+/* スマホは × で閉じられるので、キャンセル類は出さずに主ボタンを全幅にする */
+@media (max-width:599px){ .sheet .sheet-foot .sheet-cancel{ display:none; } }
+
+/* 完了画面 */
+.sheet .nm-success{ padding:var(--sp-6) var(--sp-4); gap:var(--sp-3); }
+.sheet .nm-success h3{ color:var(--c-ok); }
+.sheet .nm-success p{ font-size:var(--fs-md); color:var(--c-sub); }
+.sheet .nm-success .sheet-btn{ min-width:200px; }
+
+/* ---------- 入力欄（ラベルは上・高さ 48px 以上・文字 16px 以上） ---------- */
+.sheet .nm-field{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.sheet .nm-field label{ font-size:15px; font-weight:700; letter-spacing:0; color:var(--c-ink); }
+.sheet .req{ color:var(--c-danger); font-size:var(--fs-sm); font-weight:700; }
+.sheet .hint{ color:var(--c-sub); font-size:var(--fs-sm); font-weight:400; }
+.sheet input:not([type=checkbox]):not([type=radio]):not([type=file]), .sheet select, .sheet textarea{
+  min-height:var(--tap) !important; font-size:16px !important; box-sizing:border-box;
+  border:1px solid var(--c-field-line) !important; border-radius:10px !important;
+  background:#fff !important; color:var(--c-ink) !important; font-family:inherit;
+}
+.sheet .nm-field input:not([type=checkbox]):not([type=radio]):not([type=file]), .sheet .nm-field select, .sheet .nm-field textarea{ width:100%; padding:10px 12px; }
+.sheet textarea{ min-height:96px !important; line-height:1.6; resize:vertical; }
+.sheet input:focus, .sheet select:focus, .sheet textarea:focus{ border-color:var(--c-info) !important; }
+
+/* 写真（「写真を撮る」「アルバムから」） */
+.photo-btns{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:var(--sp-2); }
+.photo-btn{
+  min-height:88px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  border:2px dashed var(--c-field-line); border-radius:var(--r-md); background:#fff; color:var(--c-ink);
+  font:inherit; font-size:15px; font-weight:700; cursor:pointer;
+}
+.photo-btns-full{ grid-template-columns:minmax(0, 1fr); }
+.photo-btns-full .photo-btn{ min-height:56px; flex-direction:row; gap:var(--sp-2); }
+.photo-preview{ display:flex; flex-wrap:wrap; gap:6px; }
+.photo-preview:empty{ display:none; }
+.sheet .nm-photo-area{ padding:var(--sp-3); }
+.sheet .nm-photo-text{ font-size:var(--fs-sm); }
+.sheet .nm-photo-text small{ font-size:var(--fs-xs); color:var(--c-sub); }
+.sheet .nm-preview-del{ width:32px; height:32px; top:-10px; right:-10px; font-size:16px; background:var(--c-danger); }
+/* スマホはボタンで選ぶので、ドラッグ用の枠は出さない */
+@media (max-width:599px){ .sheet .nm-photo-area{ display:none; } }
+
+/* 大きな選択ボタン（ヒヤリ報告の危険の種類） */
+.choice-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:var(--sp-2); }
+.choice-grid:empty{ display:none; }
+.choice-btn{
+  min-height:52px; padding:6px 10px; border:1px solid var(--c-field-line); border-radius:var(--r-md);
+  background:#fff; color:var(--c-ink); font:inherit; font-size:15px; line-height:1.3; cursor:pointer;
+}
+.choice-btn[aria-pressed="true"]{ background:var(--c-info); border:2px solid var(--c-info); color:#fff; font-weight:700; }
+.choice-grid .choice-btn:last-child:nth-child(odd){ grid-column:span 2; }
+
+/* 教育訓練の参加者 */
+.sheet-checklist{ max-height:240px; overflow-y:auto; padding:var(--sp-1) var(--sp-2); border:1px solid var(--c-line); border-radius:var(--r-md); }
+.sheet-checklist label{ min-height:var(--tap); font-size:var(--fs-md) !important; }
+.sheet-checklist input[type=checkbox]{ width:22px !important; height:22px !important; flex-shrink:0; }
+
+/* Excel 書き出しの行 */
+.export-row{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); padding:var(--sp-3); background:var(--c-bg); border-radius:var(--r-md); }
+.export-row-info{ background:var(--c-info-bg); }
+.export-row button{ min-height:var(--tap); flex-shrink:0; }
+
+/* ---------- 設備点検シート ---------- */
+.sheet-list{ display:flex; flex-direction:column; gap:var(--sp-2); }
+.sheet-list-row{
+  width:100%; min-height:var(--tap-lg); box-sizing:border-box;
+  display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-4);
+  border:1px solid var(--c-line); border-radius:var(--r-md); background:#fff; color:var(--c-ink);
+  font:inherit; font-size:var(--fs-md); text-align:left; cursor:pointer;
+}
+.sheet-list-row:hover{ background:var(--c-bg); }
+.slr-name{ flex:1; min-width:0; font-weight:700; }
+.slr-go{ font-size:24px; line-height:1; color:var(--c-sub); }
+
+/* 始業前／月次のタブ（セグメント） */
+.seg{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4px; padding:4px; margin-bottom:var(--sp-3); background:var(--c-neutral-bg); border-radius:var(--r-md); }
+.seg-btn{ min-height:var(--tap); border:0; border-radius:9px; background:transparent; color:var(--c-sub); font:inherit; font-size:16px; font-weight:700; cursor:pointer; }
+.seg-btn[aria-selected="true"]{ background:#fff; color:var(--c-ink); box-shadow:0 1px 2px rgba(22,32,42,.15); }
+
+/* 点検項目：項目名の下に「正常／異常」2 分割ボタン */
+#insp-modal .insp-cp-list, #insp-modal .insp-cp-rows{ display:flex; flex-direction:column; gap:var(--sp-3); }
+#insp-modal .insp-cp-row{
+  display:flex; flex-direction:column; gap:var(--sp-3); padding:var(--sp-4);
+  background:#fff !important; border:1px solid var(--c-line) !important; border-radius:var(--r-lg); box-shadow:none;
+}
+#insp-modal .insp-cp-row.is-ng{ border:2px solid var(--c-danger) !important; }
+#insp-modal .insp-cp-label{ font-size:var(--fs-md); line-height:1.6; }
+#insp-modal .insp-cp-btns{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:var(--sp-2); }
+#insp-modal .cp-btn{
+  height:52px; padding:0 var(--sp-2); border-radius:var(--r-md); background:#fff; opacity:1;
+  font:inherit; font-size:17px; font-weight:700; letter-spacing:0; cursor:pointer;
+}
+#insp-modal .cp-ok{ border:2px solid var(--c-ok); color:var(--c-ok); }
+#insp-modal .cp-ng{ border:2px solid var(--c-danger); color:var(--c-danger); }
+#insp-modal .cp-ok[aria-pressed="true"]{ background:var(--c-ok); color:#fff; }
+#insp-modal .cp-ng[aria-pressed="true"]{ background:var(--c-danger); color:#fff; }
+#insp-modal .insp-abnormal-section{
+  gap:var(--sp-3); padding:var(--sp-4); background:var(--c-danger-bg);
+  border:1px solid var(--c-danger-line); border-radius:var(--r-lg);
+}
+#insp-modal .insp-abn-title{ margin:0; font-size:var(--fs-md); letter-spacing:0; color:var(--c-danger); }
+
+/* ---------- 安全巡視シート：項目名の下に「良好／指摘／対象外」 ---------- */
+#patrol-modal .patrol-cp-section{ margin-bottom:var(--sp-4); }
+#patrol-modal .patrol-cp-section-title{ font-size:var(--fs-sm); font-weight:700; letter-spacing:0; color:var(--c-sub); }
+#patrol-modal .patrol-cp-item{
+  display:flex; flex-direction:column; align-items:stretch; gap:var(--sp-2);
+  padding:var(--sp-3); margin-bottom:var(--sp-2); background:#fff; border:1px solid var(--c-line); border-radius:var(--r-md);
+}
+#patrol-modal .patrol-cp-item.is-ng{ border-color:var(--c-danger); }
+#patrol-modal .patrol-cp-label{ font-size:var(--fs-md); line-height:1.5; }
+#patrol-modal .patrol-cp-btns{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
+#patrol-modal .patrol-cp-btn{
+  min-height:var(--tap); padding:0 4px; border-radius:var(--r-sm); background:#fff; opacity:1;
+  font:inherit; font-size:15px; font-weight:700; cursor:pointer;
+}
+#patrol-modal .patrol-cp-btn-ok{ border:2px solid var(--c-ok); color:var(--c-ok); }
+#patrol-modal .patrol-cp-btn-ng{ border:2px solid var(--c-danger); color:var(--c-danger); }
+#patrol-modal .patrol-cp-btn-na{ border:2px solid var(--c-field-line); color:var(--c-sub); }
+#patrol-modal .patrol-cp-btn-ok.active{ background:var(--c-ok); color:#fff; }
+#patrol-modal .patrol-cp-btn-ng.active{ background:var(--c-danger); color:#fff; }
+#patrol-modal .patrol-cp-btn-na.active{ background:var(--c-neutral); border-color:var(--c-neutral); color:#fff; }
+#patrol-modal .patrol-ng-comment{ margin:0 0 var(--sp-3); padding-left:var(--sp-3); border-left:4px solid var(--c-danger); }
+#patrol-modal .patrol-ng-comment input{ width:100%; padding:10px 12px; }
+
+/* ---------- PDF 閲覧・QR ---------- */
+.sheet .sheet-panel-wide iframe{ flex:1 1 auto; width:100%; min-height:60vh; border:0; background:#fff; }
+.qr-body{ align-items:center; text-align:center; }
+.qr-label{ font-size:var(--fs-sm); color:var(--c-sub); }
+.qr-code{ display:flex; justify-content:center; }
+.qr-url{ width:100%; box-sizing:border-box; padding:var(--sp-2); font-size:var(--fs-xs); color:var(--c-sub); word-break:break-all; background:var(--c-bg); border-radius:var(--r-sm); }
+
+/* ---------- 600px〜：中央のダイアログ ---------- */
+@media (min-width:600px){
+  .sheet.is-open{ align-items:center; padding:var(--sp-5); }
+  .sheet .sheet-panel{
+    max-width:720px; height:auto; max-height:90vh; max-height:90dvh;
+    border-radius:var(--r-lg); box-shadow:0 20px 50px rgba(16,24,40,.3);
+  }
+  .sheet .sheet-panel-sm{ max-width:440px; }
+  .sheet .sheet-panel-wide{ max-width:1100px; height:90vh; height:90dvh; }
+  .sheet .sheet-head{ padding:6px var(--sp-2) 6px var(--sp-3); border-radius:var(--r-lg) var(--r-lg) 0 0; }
+  .sheet .sheet-body{ padding:var(--sp-5); }
+  .sheet .sheet-foot{ justify-content:flex-end; padding:var(--sp-3) var(--sp-5); border-radius:0 0 var(--r-lg) var(--r-lg); }
+  .sheet .sheet-foot .sheet-btn{ flex:0 0 auto; min-width:140px; }
+  .sheet .sheet-grid-2{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .sheet .sheet-grid-3{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+  .sheet .nm-row{ grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); }
+}
+</style>
 </head>
 <body>
 
@@ -2450,9 +2645,13 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
 
 
 <!-- ========== Google Drive 連携パネル ========== -->
-<div id="drive-panel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9500;overflow-y:auto;padding:20px;">
-  <div style="max-width:560px;width:100%;margin:0 auto;background:#FFFFFF;border-radius:14px;padding:28px;border:1px solid rgba(66,133,244,.3);">
-    <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px;">🔵 Google ドライブ 連携設定</h2>
+<div id="drive-panel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="drive-panel-title">
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <button type="button" class="sheet-close" onclick="closeDrivePanel()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <h2 class="sheet-title" id="drive-panel-title">Google ドライブ 連携設定</h2>
+    </div>
+    <div class="sheet-body">
     <p style="font-size:12px;color:var(--sub);margin-bottom:20px;line-height:1.6;">Google Apps Script（GAS）を使ってデータをドライブへ保存します。<br>設定は一度だけ。以降はボタン1つでバックアップできます。</p>
 
     <!-- Step 1 -->
@@ -2466,8 +2665,8 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
         <li>表示された「ウェブアプリURL」をコピーして下に貼り付ける</li>
       </ol>
       <div style="margin-top:10px;">
-        <div style="font-size:11px;color:var(--sub);margin-bottom:4px;">GASコード（コピーして使用）：</div>
-        <div style="background:#FFFFFF;border-radius:6px;padding:10px;font-family:monospace;font-size:11px;color:#2563EB;overflow-x:auto;white-space:pre;cursor:pointer;" onclick="copyGasCode()" title="クリックでコピー">function doPost(e) {
+        <div style="font-size:12px;color:var(--sub);margin-bottom:4px;">GASコード（コピーして使用）：</div>
+        <div style="background:#FFFFFF;border-radius:6px;padding:10px;font-family:monospace;font-size:12px;color:#2563EB;overflow-x:auto;white-space:pre;cursor:pointer;" onclick="copyGasCode()" title="クリックでコピー">function doPost(e) {
   const data = JSON.parse(e.postData.contents);
   const folder = DriveApp.getRootFolder();
   const fname = 'safety_backup_' + data.timestamp + '.json';
@@ -2490,7 +2689,7 @@ function doGet(e) {
   }
   return ContentService.createTextOutput('{}').setMimeType(ContentService.MimeType.JSON);
 }</div>
-        <div style="font-size:11px;color:var(--sub);margin-top:4px;">👆 クリックでクリップボードにコピー</div>
+        <div style="font-size:12px;color:var(--sub);margin-top:4px;">👆 クリックでクリップボードにコピー</div>
       </div>
     </div>
 
@@ -2516,116 +2715,126 @@ function doGet(e) {
       <div id="drive-log" style="margin-top:10px;font-size:12px;color:var(--sub);min-height:20px;"></div>
     </div>
 
-    <div style="text-align:right;margin-top:16px;">
-      <button onclick="closeDrivePanel()" style="background:rgba(0,0,0,.06);border:none;color:#14181F;border-radius:6px;padding:10px 20px;font-size:13px;font-family:inherit;cursor:pointer;">閉じる</button>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="sheet-btn" onclick="closeDrivePanel()">閉じる</button>
     </div>
   </div>
 </div>
 
 <!-- ========== Excel書き出しパネル ========== -->
-<div id="excel-panel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9500;overflow-y:auto;padding:20px;">
-  <div style="max-width:520px;width:100%;margin:0 auto;background:#FFFFFF;border-radius:14px;padding:28px;border:1px solid rgba(0,168,89,.3);">
-    <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px;">📊 記録 Excel書き出し</h2>
+<div id="excel-panel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="excel-panel-title">
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <button type="button" class="sheet-close" onclick="closeExcelPanel()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <h2 class="sheet-title" id="excel-panel-title">記録の Excel 書き出し</h2>
+    </div>
+    <div class="sheet-body">
     <p style="font-size:12px;color:var(--sub);margin-bottom:20px;line-height:1.6;">法令に基づく保管用記録として、各種データをCSV/Excel形式でダウンロードできます。<br>ダウンロード後、Google ドライブまたは社内サーバーに保存してください。</p>
 
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
       <!-- 設備点検（始業前＋月次 全履歴） -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">🔧 設備点検記録（全履歴）</div>
-          <div style="font-size:11px;color:var(--sub);">保管義務：3年（安衛則§135の2）</div>
+          <div style="font-size:12px;color:var(--sub);">保管義務：3年（安衛則§135の2）</div>
         </div>
         <button onclick="exportCSV('insp')" style="background:#128A3E;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- 月次点検のみ -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">📅 月次点検記録</div>
-          <div style="font-size:11px;color:var(--sub);">月次点検のみを抽出・月別に保管</div>
+          <div style="font-size:12px;color:var(--sub);">月次点検のみを抽出・月別に保管</div>
         </div>
         <button onclick="exportCSV('insp_monthly')" style="background:#128A3E;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- フォークリフト -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">🚜 フォーク定期自主検査</div>
-          <div style="font-size:11px;color:var(--sub);">保管義務：3年（安衛則§151の23）</div>
+          <div style="font-size:12px;color:var(--sub);">保管義務：3年（安衛則§151の23）</div>
         </div>
         <button onclick="exportCSV('fork')" style="background:#128A3E;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- クレーン -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">🏗 クレーン定期自主検査</div>
-          <div style="font-size:11px;color:var(--sub);">保管義務：3年（クレーン則§38）</div>
+          <div style="font-size:12px;color:var(--sub);">保管義務：3年（クレーン則§38）</div>
         </div>
         <button onclick="exportCSV('crane')" style="background:#128A3E;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- ヒヤリハット -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">⚠ ヒヤリハット報告</div>
-          <div style="font-size:11px;color:var(--sub);">法令義務なし・推奨保管</div>
+          <div style="font-size:12px;color:var(--sub);">法令義務なし・推奨保管</div>
         </div>
         <button onclick="exportCSV('nm')" style="background:#128A3E;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- 安全巡視 -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">🔍 安全巡視記録</div>
-          <div style="font-size:11px;color:var(--sub);">法令義務なし・推奨保管</div>
+          <div style="font-size:12px;color:var(--sub);">法令義務なし・推奨保管</div>
         </div>
         <button onclick="exportCSV('patrol')" style="background:#128A3E;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- 教育訓練 -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">🎓 教育訓練記録</div>
-          <div style="font-size:11px;color:var(--sub);">法令義務なし・推奨保管</div>
+          <div style="font-size:12px;color:var(--sub);">法令義務なし・推奨保管</div>
         </div>
         <button onclick="exportCSV('training')" style="background:#128A3E;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- リスクアセスメント -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">⚠️ リスクアセスメント記録</div>
-          <div style="font-size:11px;color:var(--sub);">実施状況・担当者・完了日</div>
+          <div style="font-size:12px;color:var(--sub);">実施状況・担当者・完了日</div>
         </div>
         <button onclick="exportCSV('ra')" style="background:#128A3E;color:#FFFFFF;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- 登録設備一覧 -->
-      <div style="background:rgba(0,0,0,.04);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="export-row">
         <div>
           <div style="font-size:14px;font-weight:700;">📋 登録設備一覧（点検項目付き）</div>
-          <div style="font-size:11px;color:var(--sub);">設備名・始業前/月次チェック項目</div>
+          <div style="font-size:12px;color:var(--sub);">設備名・始業前/月次チェック項目</div>
         </div>
         <button onclick="exportCSV('equip')" style="background:#128A3E;color:#FFFFFF;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 CSV</button>
       </div>
       <!-- 全件バックアップ -->
-      <div style="background:rgba(66,133,244,.08);border-radius:8px;padding:14px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(66,133,244,.2);">
+      <div class="export-row export-row-info">
         <div>
           <div style="font-size:14px;font-weight:700;color:#4285F4;">📦 全データ一括バックアップ</div>
-          <div style="font-size:11px;color:var(--sub);">全記録をJSONで出力（復元用）</div>
+          <div style="font-size:12px;color:var(--sub);">全記録をJSONで出力（復元用）</div>
         </div>
         <button onclick="exportData()" style="background:#4285F4;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;">📥 JSON</button>
       </div>
     </div>
 
-    <div style="background:rgba(245,168,0,.08);border:1px solid rgba(245,168,0,.3);border-radius:6px;padding:10px 14px;font-size:11px;color:#B45309;line-height:1.7;margin-bottom:16px;">
+    <div style="background:rgba(245,168,0,.08);border:1px solid rgba(245,168,0,.3);border-radius:6px;padding:10px 14px;font-size:12px;color:#B45309;line-height:1.7;margin-bottom:16px;">
       ⚠ ダウンロードしたファイルは必ずGoogle ドライブまたは社内サーバーに保存してください。<br>
       ブラウザのキャッシュを削除するとlocalStorage内のデータは消えます。
     </div>
 
-    <div style="text-align:right;">
-      <button onclick="closeExcelPanel()" style="background:rgba(0,0,0,.06);border:none;color:#14181F;border-radius:6px;padding:10px 20px;font-size:13px;font-family:inherit;cursor:pointer;">閉じる</button>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="sheet-btn" onclick="closeExcelPanel()">閉じる</button>
     </div>
   </div>
 </div>
 
 <!-- ========== 担当者名簿 モーダル ========== -->
-<div id="roster-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9500;overflow-y:auto;padding:20px;">
-  <div style="max-width:640px;width:100%;margin:0 auto;background:#FFFFFF;border-radius:14px;padding:28px;border:1px solid rgba(10,132,255,.3);">
-    <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;">👥 担当者名簿・部門リスト</h2>
+<div id="roster-modal" class="sheet" role="dialog" aria-modal="true" aria-labelledby="roster-modal-title">
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <button type="button" class="sheet-close" onclick="closeRosterModal()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <h2 class="sheet-title" id="roster-modal-title">担当者名簿・部門リスト</h2>
+    </div>
+    <div class="sheet-body">
     <p style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.7;">
       ここで登録した名前・部門は、設備点検・ヒヤリハット報告・安全巡視・教育訓練・資格管理のすべての選択肢に反映されます。
     </p>
@@ -2653,65 +2862,68 @@ function doGet(e) {
       <div id="dept-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;padding-right:4px;"></div>
     </div>
 
-    <div style="display:flex;gap:10px;justify-content:flex-end;">
-      <button onclick="closeRosterModal()" style="background:rgba(0,0,0,.06);border:none;color:#14181F;border-radius:6px;padding:10px 20px;font-size:14px;font-family:inherit;cursor:pointer;">キャンセル</button>
-      <button onclick="saveRoster()" style="background:#0B63CE;color:#fff;border:none;border-radius:6px;padding:10px 24px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;">💾 保存</button>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="sheet-btn sheet-cancel" onclick="closeRosterModal()">キャンセル</button>
+      <button type="button" class="sheet-btn sheet-btn-primary" onclick="saveRoster()">保存</button>
     </div>
   </div>
 </div>
 
 <!-- ========== 改善報告 モーダル ========== -->
-<div id="improvement-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9500;overflow-y:auto;padding:16px;align-items:flex-start;justify-content:center;">
-  <div style="max-width:540px;width:100%;margin:0 auto;background:#FFFFFF;border-radius:14px;padding:24px;border:1px solid rgba(48,209,88,.3);">
-    <h2 style="font-size:17px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px;">✅ 改善報告</h2>
-    <div id="improvement-issue-label" style="font-size:13px;color:var(--sub);margin-bottom:16px;padding:8px 12px;background:rgba(255,69,58,.08);border-left:3px solid #D42B1C;border-radius:4px;"></div>
+<div id="improvement-modal" class="sheet" role="dialog" aria-modal="true" aria-labelledby="improvement-modal-title">
+  <div class="sheet-panel">
+    <div class="sheet-head">
+      <button type="button" class="sheet-close" onclick="closeImprovementModal()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <h2 class="sheet-title" id="improvement-modal-title">改善報告</h2>
+    </div>
+    <div class="sheet-body">
+    <div id="improvement-issue-label" class="sheet-issue"></div>
 
     <div class="nm-field" style="margin-bottom:12px;">
-      <label>改善内容</label>
+      <label for="improvement-content">改善内容</label>
       <textarea id="improvement-content" class="nm-input" rows="3" placeholder="実施した改善の内容を記入してください"></textarea>
     </div>
     <div class="nm-field" style="margin-bottom:12px;">
-      <label>改善担当者</label>
+      <label for="improvement-reporter">改善担当者</label>
       <select id="improvement-reporter" class="nm-input"><option value="">選択</option></select>
     </div>
     <div class="nm-field" style="margin-bottom:12px;">
-      <label>改善日</label>
+      <label for="improvement-date">改善日</label>
       <input type="date" id="improvement-date" class="nm-input">
     </div>
 
     <div class="nm-field">
       <label>📷 改善後の写真</label>
-      <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <button type="button" onclick="triggerImprovementCamera()"
-          style="flex:1;background:#128A3E;color:#FFFFFF;border:none;border-radius:6px;padding:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;">📷 カメラ起動</button>
-        <button type="button" onclick="triggerImprovementGallery()"
-          style="flex:1;background:rgba(0,0,0,.07);color:#14181F;border:1px solid rgba(0,0,0,.14);border-radius:6px;padding:10px;font-size:13px;font-family:inherit;cursor:pointer;">🖼 ギャラリー</button>
+      <div class="photo-btns">
+        <button type="button" class="photo-btn" onclick="triggerImprovementCamera()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>写真を撮る</button>
+        <button type="button" class="photo-btn" onclick="triggerImprovementGallery()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>アルバムから</button>
       </div>
       <input type="file" id="improvement-photo-camera" accept="image/*" capture="environment" style="display:none" onchange="handleImprovementPhoto(event)">
       <input type="file" id="improvement-photo-gallery" accept="image/*" multiple style="display:none" onchange="handleImprovementPhoto(event)">
       <div id="improvement-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
     </div>
 
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-      <button onclick="closeImprovementModal()" class="nm-cancel">キャンセル</button>
-      <button onclick="saveImprovement()" class="nm-submit" style="background:#128A3E;color:#FFFFFF;">✅ 改善完了として保存</button>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" onclick="closeImprovementModal()" class="sheet-btn sheet-cancel nm-cancel">キャンセル</button>
+      <button type="button" onclick="saveImprovement()" class="sheet-btn sheet-btn-primary sheet-btn-ok">改善完了として保存</button>
     </div>
   </div>
 </div>
 <!-- ========== TRAINING MODAL ========== -->
-<div id="training-modal">
-  <div style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);border-top:3px solid var(--accent);
-              border-radius:8px;width:min(680px,95vw);max-height:90vh;
-              display:flex;flex-direction:column;overflow:hidden;">
+<div id="training-modal" class="sheet" role="dialog" aria-modal="true" aria-labelledby="training-modal-title">
+  <div class="sheet-panel">
     <!-- 固定ヘッダー -->
-    <div style="padding:20px 28px 14px;flex-shrink:0;border-bottom:1px solid rgba(0,0,0,.06);">
-      <h2 style="font-size:18px;font-weight:700;margin:0;">🎓 教育訓練 記録入力</h2>
+    <div class="sheet-head">
+      <button type="button" class="sheet-close" onclick="closeTrainingModal()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <h2 class="sheet-title" id="training-modal-title">教育訓練の記録</h2>
     </div>
-    <!-- スクロール本文 -->
-    <div style="overflow-y:auto;padding:16px 28px;flex:1;display:flex;flex-direction:column;gap:14px;">
+    <!-- 本文 -->
+    <div class="sheet-body">
       <div class="nm-row">
-        <div class="nm-field"><label>実施日</label><input type="date" id="tr-date" class="nm-input"></div>
-        <div class="nm-field"><label>訓練種別</label>
+        <div class="nm-field"><label for="tr-date">実施日</label><input type="date" id="tr-date" class="nm-input"></div>
+        <div class="nm-field"><label for="tr-category">訓練種別</label>
           <select id="tr-category" class="nm-input">
             <option value="">選択</option>
             <option>安全衛生大会</option>
@@ -2726,212 +2938,212 @@ function doGet(e) {
           </select>
         </div>
       </div>
-      <div class="nm-field"><label>訓練内容・テーマ</label>
+      <div class="nm-field"><label for="tr-title">訓練内容・テーマ</label>
         <input type="text" id="tr-title" class="nm-input" placeholder="例: リスクアセスメント実施・教育">
       </div>
-      <div class="nm-field"><label>講師・担当者</label>
+      <div class="nm-field"><label for="tr-instructor">講師・担当者</label>
         <select id="tr-instructor" class="nm-input"><option value="">— 選択 —</option></select>
       </div>
       <div class="nm-field">
         <label>参加者</label>
-        <div id="tr-attendees" style="max-height:150px;overflow-y:auto;background:rgba(0,0,0,.04);
-             border-radius:6px;padding:8px 12px;border:1px solid rgba(0,0,0,.07);margin-top:4px;"></div>
+        <div id="tr-attendees" class="sheet-checklist"></div>
       </div>
-      <div class="nm-field"><label>備考・所見</label>
+      <div class="nm-field"><label for="tr-note">備考・所見</label>
         <textarea id="tr-note" class="nm-input" rows="2" placeholder="訓練の内容・気づき・改善点など" style="resize:none;"></textarea>
       </div>
     </div>
     <!-- 固定フッター（保存ボタン） -->
-    <div style="padding:12px 28px 20px;flex-shrink:0;border-top:1px solid rgba(0,0,0,.06);
-                display:flex;gap:10px;justify-content:flex-end;background:#FFFFFF;border-radius:0 0 8px 8px;">
-      <button class="nm-cancel" onclick="closeTrainingModal()">キャンセル</button>
-      <button id="tr-save-btn" class="nm-submit" onclick="saveTrainingRecord()">💾 保存</button>
+    <div class="sheet-foot">
+      <button type="button" class="sheet-btn sheet-cancel nm-cancel" onclick="closeTrainingModal()">キャンセル</button>
+      <button type="button" id="tr-save-btn" class="sheet-btn sheet-btn-primary" onclick="saveTrainingRecord()">保存</button>
     </div>
   </div>
 </div>
 
 <!-- ========== PATROL MODAL ========== -->
-<div id="patrol-modal">
-  <div class="patrol-modal-inner">
-    <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px;">🔍 安全巡視 記録入力</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-      <div class="nm-field"><label>実施日</label><input type="date" id="patrol-date" class="nm-input"></div>
-      <div class="nm-field"><label>巡視担当者</label><select id="patrol-reporter" class="nm-input"><option value="">選択</option></select></div>
+<div id="patrol-modal" class="sheet" role="dialog" aria-modal="true" aria-labelledby="patrol-modal-title">
+  <div class="patrol-modal-inner sheet-panel">
+    <div class="sheet-head">
+      <button type="button" class="sheet-close" onclick="closePatrolModal()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <h2 class="sheet-title" id="patrol-modal-title">安全巡視の記録</h2>
     </div>
-    <div class="nm-field" style="margin-bottom:12px;"><label>巡視エリア</label><input type="text" id="patrol-area" class="nm-input" placeholder="例: 全工場・事務所・駐車場"></div>
-    <div style="font-size:11px;letter-spacing:2px;color:var(--sub);margin:14px 0 8px;">📋 チェックリスト</div>
+    <div class="sheet-body">
+    <div class="sheet-grid-2">
+      <div class="nm-field"><label for="patrol-date">実施日</label><input type="date" id="patrol-date" class="nm-input"></div>
+      <div class="nm-field"><label for="patrol-reporter">巡視担当者</label><select id="patrol-reporter" class="nm-input"><option value="">選択</option></select></div>
+    </div>
+    <div class="nm-field"><label for="patrol-area">巡視エリア</label><input type="text" id="patrol-area" class="nm-input" placeholder="例: 全工場・事務所・駐車場"></div>
+    <h3 class="sheet-section-title">チェックリスト</h3>
     <div id="patrol-cp-list"></div>
-    <div class="nm-field" style="margin-top:14px;">
-      <label>📷 写真添付</label>
-      <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <button type="button" onclick="triggerPatrolCamera()" style="flex:1;background:#128A3E;color:#FFFFFF;border:none;border-radius:6px;padding:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;">📷 カメラ起動</button>
-        <button type="button" onclick="triggerPatrolGallery()" style="flex:1;background:rgba(0,0,0,.07);color:#14181F;border:1px solid rgba(0,0,0,.14);border-radius:6px;padding:10px;font-size:13px;font-family:inherit;cursor:pointer;">🖼 ギャラリー</button>
+    <div class="nm-field">
+      <label>写真</label>
+      <div class="photo-btns">
+        <button type="button" class="photo-btn" onclick="triggerPatrolCamera()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>写真を撮る</button>
+        <button type="button" class="photo-btn" onclick="triggerPatrolGallery()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>アルバムから</button>
       </div>
       <input type="file" id="patrol-photo-camera" accept="image/*" capture="environment" style="display:none" onchange="handlePatrolPhotos(event)">
       <input type="file" id="patrol-photo-gallery" accept="image/*" multiple style="display:none" onchange="handlePatrolPhotos(event)">
-      <div id="patrol-photo-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+      <div id="patrol-photo-preview" class="photo-preview"></div>
     </div>
-    <div class="nm-field" style="margin-top:10px;"><label>総評・所見</label><textarea id="patrol-overall" class="nm-input" rows="3" placeholder="巡視全体の状況・改善提案など" style="resize:vertical;"></textarea></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-      <button class="nm-cancel" onclick="closePatrolModal()">キャンセル</button>
-      <button class="nm-submit" onclick="savePatrol()">💾 保存</button>
+    <div class="nm-field"><label for="patrol-overall">総評・所見</label><textarea id="patrol-overall" class="nm-input" rows="3" placeholder="巡視全体の状況・改善提案など"></textarea></div>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="sheet-btn sheet-cancel nm-cancel" onclick="closePatrolModal()">キャンセル</button>
+      <button type="button" class="sheet-btn sheet-btn-primary" onclick="savePatrol()">保存</button>
     </div>
   </div>
 </div>
 
 <!-- ========== INSPECTION SELECT MODAL ========== -->
-<div id="insp-modal">
-  <div class="insp-box" id="insp-box-inner">
-    <div id="insp-select-section">
-      <h2>🔧 設備点検入力 <span>設備を選択してください</span></h2>
-      <div id="insp-select-list" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:16px">
-        <button class="nm-cancel" onclick="closeInspModal()">閉じる</button>
+<div id="insp-modal" class="sheet" role="dialog" aria-modal="true" aria-labelledby="insp-sheet-title">
+  <div class="insp-box sheet-panel" id="insp-box-inner">
+    <div id="insp-select-section" class="sheet-flow">
+      <div class="sheet-head">
+        <button type="button" class="sheet-close" onclick="closeInspModal()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        <h2 class="sheet-title" id="insp-sheet-title">🔧 設備点検入力 <span>設備を選択してください</span></h2>
+      </div>
+      <div class="sheet-body">
+        <div id="insp-select-list" class="sheet-list"></div>
       </div>
     </div>
-    <div id="insp-detail-section" style="display:none">
-      <h2 id="insp-detail-title">🔧 <span></span></h2>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:4px">
-        <div class="nm-field" style="flex:1;min-width:140px">
-          <label>点検日</label>
-          <input type="date" id="insp-date" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:10px;border-radius:4px;font-family:inherit;outline:none;width:100%">
+    <div id="insp-detail-section" class="sheet-flow" style="display:none">
+      <div class="sheet-head">
+        <button type="button" class="sheet-close sheet-back" onclick="backToInspSelect()" aria-label="設備の選択に戻る"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <h2 class="sheet-title" id="insp-detail-title">🔧 <span></span></h2>
+        <span class="sheet-head-meta" id="insp-progress" aria-live="polite"></span>
+        <button type="button" class="sheet-close" onclick="closeInspModal()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="sheet-body">
+      <div class="sheet-grid-3">
+        <div class="nm-field">
+          <label for="insp-date">点検日</label>
+          <input type="date" id="insp-date">
         </div>
 
-        <div class="nm-field" style="flex:1;min-width:140px">
-          <label>点検担当者</label>
-          <select id="insp-reporter" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:10px;border-radius:4px;font-family:inherit;outline:none;width:100%">
+        <div class="nm-field">
+          <label for="insp-reporter">点検担当者</label>
+          <select id="insp-reporter">
             <option value="">選択</option>
           </select>
         </div>
-        <div class="nm-field" style="flex:1;min-width:140px">
-          <label>部門</label>
-          <select id="insp-dept" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:10px;border-radius:4px;font-family:inherit;outline:none;width:100%">
+        <div class="nm-field">
+          <label for="insp-dept">部門</label>
+          <select id="insp-dept">
             <option value="">選択</option>
           </select>
         </div>
       </div>
       <!-- 点検チェックリスト -->
-      <div style="margin-top:14px;font-size:15px;color:var(--sub);letter-spacing:2px;border-bottom:1px solid rgba(0,0,0,.06);padding-bottom:8px" id="lbl-checklist">▼ 設備点検チェックリスト</div>
-      <div class="insp-cp-list" id="insp-cp-list" style="margin-top:10px"></div>
+      <h3 class="sheet-section-title" id="lbl-checklist">▼ 設備点検チェックリスト</h3>
+      <div class="insp-cp-list" id="insp-cp-list"></div>
 
       <!-- 3S チェック -->
-      <div style="margin-top:14px;font-size:15px;color:#047857;letter-spacing:2px;font-weight:700;border-bottom:1px solid rgba(16,185,129,.2);padding-bottom:8px" id="lbl-3stitle">▼ 3S チェック（整理・整頓・清掃）</div>
-      <div id="insp-3s-list" style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+      <h3 class="sheet-section-title sheet-section-ok" id="lbl-3stitle">▼ 3S チェック（整理・整頓・清掃）</h3>
+      <div id="insp-3s-list" class="insp-cp-list">
         <div class="insp-cp-row">
           <div class="insp-cp-label" id="3s-lbl-1">① 整理 — 不要なものが周辺に放置されていないか</div>
-          <div class="insp-cp-btns">
-            <button class="cp-btn cp-ok" id="3sok-0" onclick="set3sState(0,'ok')">✓ OK</button>
-            <button class="cp-btn cp-ng" id="3sng-0" onclick="set3sState(0,'ng')">✗ NG</button>
+          <div class="insp-cp-btns" role="group" aria-labelledby="3s-lbl-1">
+            <button type="button" class="cp-btn cp-ok" id="3sok-0" aria-pressed="false" onclick="set3sState(0,'ok')">✓ OK</button>
+            <button type="button" class="cp-btn cp-ng" id="3sng-0" aria-pressed="false" onclick="set3sState(0,'ng')">✗ NG</button>
           </div>
         </div>
         <div class="insp-cp-row">
           <div class="insp-cp-label" id="3s-lbl-2">② 整頓 — 工具・材料が定位置に収納されているか</div>
-          <div class="insp-cp-btns">
-            <button class="cp-btn cp-ok" id="3sok-1" onclick="set3sState(1,'ok')">✓ OK</button>
-            <button class="cp-btn cp-ng" id="3sng-1" onclick="set3sState(1,'ng')">✗ NG</button>
+          <div class="insp-cp-btns" role="group" aria-labelledby="3s-lbl-2">
+            <button type="button" class="cp-btn cp-ok" id="3sok-1" aria-pressed="false" onclick="set3sState(1,'ok')">✓ OK</button>
+            <button type="button" class="cp-btn cp-ng" id="3sng-1" aria-pressed="false" onclick="set3sState(1,'ng')">✗ NG</button>
           </div>
         </div>
         <div class="insp-cp-row">
           <div class="insp-cp-label" id="3s-lbl-3">③ 清掃 — 設備・通路・床面が清潔に保たれているか</div>
-          <div class="insp-cp-btns">
-            <button class="cp-btn cp-ok" id="3sok-2" onclick="set3sState(2,'ok')">✓ OK</button>
-            <button class="cp-btn cp-ng" id="3sng-2" onclick="set3sState(2,'ng')">✗ NG</button>
+          <div class="insp-cp-btns" role="group" aria-labelledby="3s-lbl-3">
+            <button type="button" class="cp-btn cp-ok" id="3sok-2" aria-pressed="false" onclick="set3sState(2,'ok')">✓ OK</button>
+            <button type="button" class="cp-btn cp-ng" id="3sng-2" aria-pressed="false" onclick="set3sState(2,'ng')">✗ NG</button>
           </div>
         </div>
       </div>
 
-            <!-- 異常あり セクション -->
+      <!-- 異常あり セクション -->
       <div class="insp-abnormal-section" id="insp-abn-section">
         <div class="insp-abn-title" id="lbl-abntitle">⚠ 異常あり — 詳細を記入してください</div>
         <div class="nm-field">
-          <label>異常の状況コメント <span style="color:var(--accent);font-size:14px">※必須</span></label>
-          <textarea id="insp-comment" rows="3" placeholder="異常の内容、発生箇所、緊急度などを記入してください" style="background:#FFFFFF;border:1px solid rgba(10,132,255,.3);color:#14181F;font-size:17px;padding:10px;border-radius:4px;font-family:inherit;outline:none;width:100%;resize:vertical;line-height:1.7"></textarea>
+          <label for="insp-comment">異常の状況コメント <span class="req">※必須</span></label>
+          <textarea id="insp-comment" rows="3" placeholder="異常の内容、発生箇所、緊急度などを記入してください"></textarea>
         </div>
         <div class="nm-field">
-          <label>異常箇所の写真 <span style="color:var(--accent);font-size:14px">※必須 — 異常箇所が確認できる写真を添付してください</span></label>
-          <div style="display:flex;gap:8px;margin-bottom:8px">
-            <button type="button" onclick="triggerInspCamera()" style="flex:1;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;">📷 カメラ起動</button>
-            <button type="button" onclick="triggerInspGallery()" style="flex:1;background:rgba(0,0,0,.07);color:#14181F;border:1px solid rgba(0,0,0,.14);border-radius:6px;padding:10px;font-size:14px;font-family:inherit;cursor:pointer;">🖼 ギャラリー</button>
+          <label>異常箇所の写真 <span class="req">※必須 — 異常箇所が確認できる写真を添付してください</span></label>
+          <div class="photo-btns photo-btns-full">
+            <button type="button" class="photo-btn" onclick="triggerInspCamera()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>写真を撮る</button>
+            <button type="button" class="photo-btn" onclick="triggerInspGallery()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>アルバムから</button>
           </div>
           <input type="file" id="insp-photo-camera" accept="image/*" capture="environment" style="display:none" onchange="handleInspPhoto(this.files)">
           <input type="file" id="insp-photo-gallery" accept="image/*" multiple style="display:none" onchange="handleInspPhoto(this.files)">
-          <div class="nm-photo-area" id="insp-drop-zone" style="position:relative;border-color:rgba(10,132,255,.4)">
+          <div class="nm-photo-area" id="insp-drop-zone">
             <input type="file" id="insp-photo-input" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="handleInspPhoto(this.files)">
             <div class="nm-photo-icon">📷</div>
-            <div class="nm-photo-text">または ここをタップして選択<br><small style="color:rgba(0,0,0,.50)">撮影した写真をアップロードしてください</small></div>
+            <div class="nm-photo-text">または ここをタップして選択<br><small>撮影した写真をアップロードしてください</small></div>
           </div>
           <div class="nm-previews" id="insp-photo-preview"></div>
         </div>
       </div>
+      </div>
 
-      <div class="nm-actions" style="margin-top:8px">
-        <button class="nm-cancel" onclick="backToInspSelect()">← 戻る</button>
-        <button class="nm-submit" onclick="submitInsp()" style="background:var(--primary)">✓ 点検結果を保存</button>
+      <div class="sheet-foot">
+        <button type="button" class="sheet-btn sheet-cancel" onclick="backToInspSelect()">← 戻る</button>
+        <button type="button" class="sheet-btn sheet-btn-primary" onclick="submitInsp()">✓ 点検結果を保存</button>
       </div>
     </div>
     <div class="nm-success" id="insp-success">
       <div class="nm-success-icon">✅</div>
-      <h3 style="color:var(--gold)" id="lbl-savedsuccess">点検結果を保存しました</h3>
+      <h3 id="lbl-savedsuccess">点検結果を保存しました</h3>
       <p id="lbl-savedmsg">設備点検記録が更新されました。</p>
-      <button class="nm-submit" style="margin-top:10px;background:var(--primary)" onclick="closeInspModal()">閉じる</button>
+      <button type="button" class="sheet-btn sheet-btn-primary" onclick="closeInspModal()">閉じる</button>
     </div>
   </div>
 </div>
-</div>
 
 <!-- ========== NEAR-MISS MODAL ========== -->
-<div id="nm-modal">
-  <div class="nm-box" id="nm-box-inner">
-    <div id="nm-form-section">
-      <h2>⚠ ヒヤリハット報告 <span>※報告内容は安全管理者に通知されます</span></h2>
+<div id="nm-modal" class="sheet" role="dialog" aria-modal="true" aria-labelledby="nm-sheet-title">
+  <div class="nm-box sheet-panel" id="nm-box-inner">
+    <div id="nm-form-section" class="sheet-flow">
+      <div class="sheet-head">
+        <button type="button" class="sheet-close" onclick="closeNM()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        <h2 class="sheet-title" id="nm-sheet-title">⚠ ヒヤリハット報告 <span>※報告内容は安全管理者に通知されます</span></h2>
+      </div>
+      <div class="sheet-body">
       <div class="nm-row">
         <div class="nm-field">
-          <label>発生日時</label>
+          <label for="nm-dt">発生日時</label>
           <input type="datetime-local" id="nm-dt">
         </div>
         <div class="nm-field">
-          <label>発生場所</label>
+          <label for="nm-loc">発生場所</label>
           <input type="text" id="nm-loc" placeholder="例：第2工場 プレスライン前">
         </div>
       </div>
-      <div class="nm-row">
-        <div class="nm-field">
-          <label>報告者名</label>
-          <select id="nm-name" class="nm-reporter-select">
-            <option value="">-- 選択してください --</option>
-          </select>
-        </div>
-        <div class="nm-field">
-          <label>部門</label>
-          <select id="nm-dept" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:10px;border-radius:4px;font-family:inherit;outline:none;width:100%">
-            <option value="">選択</option>
-          </select>
-        </div>
-        <div class="nm-field">
-          <label>危険の種類</label>
-          <select id="nm-type">
-            <option value="">選択してください</option>
-            <option>転倒・つまずき</option>
-            <option>挟まれ・巻き込まれ</option>
-            <option>落下・墜落</option>
-            <option>感電・熱傷</option>
-            <option>化学物質</option>
-            <option>交通・車両</option>
-            <option>その他</option>
-          </select>
-        </div>
+      <div class="nm-field">
+        <label for="nm-type" id="nm-type-label">危険の種類</label>
+        <div class="choice-grid" id="nm-type-btns" role="group" aria-labelledby="nm-type-label"></div>
+        <select id="nm-type" class="nm-type-native" aria-label="危険の種類（一覧から選ぶ）">
+          <option value="">選択してください</option>
+          <option>転倒・つまずき</option>
+          <option>挟まれ・巻き込まれ</option>
+          <option>落下・墜落</option>
+          <option>感電・熱傷</option>
+          <option>化学物質</option>
+          <option>交通・車両</option>
+          <option>その他</option>
+        </select>
       </div>
       <div class="nm-field">
-        <label>状況の説明（何が起きたか・どんな危険があったか）</label>
+        <label for="nm-desc">状況の説明（何が起きたか・どんな危険があったか）</label>
         <textarea id="nm-desc" placeholder="例：床に油がこぼれていてスリップしそうになった。清掃後のマットが未設置だった。"></textarea>
       </div>
       <div class="nm-field">
-        <label>写真添付 <span style="color:var(--accent);font-size:14px">※異常・危険箇所が確認できる場合に添付してください</span></label>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <button type="button" onclick="document.getElementById('nm-photo-camera').click()"
-            style="flex:1;background:#128A3E;color:#FFFFFF;border:none;border-radius:6px;padding:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;">📷 カメラ起動</button>
-          <button type="button" onclick="document.getElementById('nm-photo').click()"
-            style="flex:1;background:rgba(0,0,0,.07);color:#14181F;border:1px solid rgba(0,0,0,.14);border-radius:6px;padding:10px;font-size:13px;font-family:inherit;cursor:pointer;">🖼 ギャラリー</button>
+        <label>写真 <span class="hint">※異常・危険箇所が確認できる場合に添付してください</span></label>
+        <div class="photo-btns">
+          <button type="button" class="photo-btn" onclick="document.getElementById('nm-photo-camera').click()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>写真を撮る</button>
+          <button type="button" class="photo-btn" onclick="document.getElementById('nm-photo').click()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>アルバムから</button>
         </div>
         <input type="file" id="nm-photo-camera" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos(this.files)">
         <div class="nm-photo-area" id="nm-drop-zone">
@@ -2941,65 +3153,69 @@ function doGet(e) {
         </div>
         <div class="nm-previews" id="nm-previews"></div>
       </div>
+      <div class="nm-row">
+        <div class="nm-field">
+          <label for="nm-name">報告者名</label>
+          <select id="nm-name" class="nm-reporter-select">
+            <option value="">-- 選択してください --</option>
+          </select>
+        </div>
+        <div class="nm-field">
+          <label for="nm-dept">部門</label>
+          <select id="nm-dept">
+            <option value="">選択</option>
+          </select>
+        </div>
+      </div>
       <div class="nm-field">
-        <label>改善提案・コメント（任意）</label>
+        <label for="nm-comment">改善提案・コメント（任意）</label>
         <textarea id="nm-comment" placeholder="例：マット設置・滑り止めシート貼付を提案します" style="min-height:60px"></textarea>
       </div>
-      <div class="nm-actions">
-        <button class="nm-cancel" onclick="closeNM()">キャンセル</button>
-        <button class="nm-submit" id="nm-submit-btn" onclick="submitNM()">📤 報告を送信</button>
+      </div>
+      <div class="nm-actions sheet-foot">
+        <button type="button" class="nm-cancel sheet-btn sheet-cancel" onclick="closeNM()">キャンセル</button>
+        <button type="button" class="nm-submit sheet-btn sheet-btn-report" id="nm-submit-btn" onclick="submitNM()">📤 報告を送信</button>
       </div>
     </div>
     <div class="nm-success" id="nm-success">
       <div class="nm-success-icon">✅</div>
       <h3 id="lbl-nmsuccess">報告を受け付けました</h3>
       <p>ヒヤリハット情報をありがとうございます。<br>安全管理者が内容を確認します。<br>引き続き安全な職場づくりにご協力ください。</p>
-      <button class="nm-submit" style="margin-top:10px" onclick="closeNM()">閉じる</button>
+      <button type="button" class="sheet-btn sheet-btn-primary" onclick="closeNM()">閉じる</button>
     </div>
   </div>
 </div>
 
 <!-- ========== ADMIN ========== -->
   <!-- 法令点検 PDFビューアモーダル -->
-  <div id="legal-pdf-modal" onclick="closeLegalPdf(event)" style="position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center">
-    <div class="legal-pdf-modal-inner" onclick="event.stopPropagation()">
-      <div class="legal-pdf-modal-hdr">
-        <div class="legal-pdf-modal-title" id="legal-pdf-modal-title">PDF閲覧</div>
-        <button class="legal-pdf-modal-close" onclick="closeLegalPdf()">✕</button>
+  <div id="legal-pdf-modal" class="sheet" role="dialog" aria-modal="true" aria-labelledby="legal-pdf-modal-title" onclick="closeLegalPdf(event)">
+    <div class="legal-pdf-modal-inner sheet-panel sheet-panel-wide" onclick="event.stopPropagation()">
+      <div class="sheet-head">
+        <button type="button" class="sheet-close" onclick="closeLegalPdf()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        <h2 class="sheet-title" id="legal-pdf-modal-title">PDF閲覧</h2>
       </div>
-      <iframe id="legal-pdf-frame" src="" style="flex:1;border:none;background:#fff;width:100%"></iframe>
+      <iframe id="legal-pdf-frame" src="" title="PDF"></iframe>
     </div>
   </div>
 
   <!-- QRコードモーダル -->
-  <div id="qr-modal" style="display:none;position:fixed;inset:0;z-index:9100;
-       background:rgba(0,0,0,.8);align-items:center;justify-content:center;flex-direction:column">
-    <div style="background:#fff;border-radius:12px;padding:32px 40px;text-align:center;
-                max-width:340px;width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-      <div style="font-size:14px;color:#555;font-weight:700;margin-bottom:6px;letter-spacing:2px">
-        📱 スマホでスキャン
+  <div id="qr-modal" class="sheet" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+    <div class="sheet-panel sheet-panel-sm">
+      <div class="sheet-head">
+        <button type="button" class="sheet-close" onclick="closeQR()" aria-label="閉じる"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        <h2 class="sheet-title" id="qr-modal-title">スマホでスキャン</h2>
       </div>
-      <div style="font-size:11px;color:#999;margin-bottom:16px" id="qr-url-label">
-        このページのURLを読み込みます
+      <div class="sheet-body qr-body">
+        <div class="qr-label" id="qr-url-label">
+          このページのURLを読み込みます
+        </div>
+        <div id="qr-code-container" class="qr-code"></div>
+        <div class="qr-url" id="qr-url-text"></div>
       </div>
-      <div id="qr-code-container" style="display:flex;justify-content:center;margin-bottom:16px"></div>
-      <div style="font-size:10px;color:#aaa;word-break:break-all;margin-bottom:20px;
-                  background:#f5f5f5;padding:8px;border-radius:4px" id="qr-url-text"></div>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <button onclick="window.print()"
-          style="background:#EDF1F6;color:#14181F;border:none;padding:10px 20px;
-                 border-radius:6px;cursor:pointer;font-size:13px;font-weight:700">
-          🖨 印刷する
-        </button>
-        <button onclick="closeQR()"
-          style="background:#eee;color:#333;border:none;padding:10px 20px;
-                 border-radius:6px;cursor:pointer;font-size:13px">
-          閉じる
-        </button>
+      <div class="sheet-foot">
+        <button type="button" class="sheet-btn sheet-cancel" onclick="closeQR()">閉じる</button>
+        <button type="button" class="sheet-btn sheet-btn-primary" onclick="window.print()">印刷する</button>
       </div>
-    </div>
-    <div style="color:rgba(0,0,0,.60);font-size:12px;margin-top:16px">
-      タップして閉じる
     </div>
   </div>
 
@@ -3011,7 +3227,8 @@ function doGet(e) {
         display: flex !important; position: static !important;
         background: white !important; padding: 0 !important;
       }
-      #qr-modal > div:last-child { display: none; }
+      #qr-modal .sheet-panel { max-height: none !important; overflow: visible !important; box-shadow: none !important; border: 0 !important; }
+      #qr-modal .sheet-head, #qr-modal .sheet-foot { display: none !important; }
       #qr-modal button { display: none !important; }
     }
   
@@ -3037,8 +3254,7 @@ function doGet(e) {
 .plt-chk-badge.na { background:rgba(0,0,0,.06); color:var(--sub); }
 .plt-section-title { font-size:10px; letter-spacing:2px; color:var(--sub); margin:8px 0 4px; padding-bottom:4px; border-bottom:1px solid rgba(0,0,0,.055); }
 /* 安全巡視モーダル */
-#patrol-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:9500; overflow-y:auto; padding:16px; }
-#patrol-modal.open { display:flex; align-items:flex-start; justify-content:center; }
+/* 入力シートの外枠（表示・重なり・背景）は <style id="ui-sheets"> で定義 */
 .patrol-modal-inner { max-width:600px; margin:0 auto; background:#FFFFFF; border-radius:12px; padding:24px; border:1px solid rgba(0,0,0,.07); }
 .patrol-cp-section { margin-bottom:14px; }
 .patrol-cp-section-title { font-size:11px; letter-spacing:2px; color:var(--sub); margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid rgba(0,0,0,.06); }
@@ -5504,8 +5720,8 @@ function applyLang() {
   // NMフォームラベル
   const nmH2 = document.querySelector('#nm-form-section h2');
   if(nmH2) nmH2.innerHTML = T('nmTitle')+' <span>'+T('nmNote')+'</span>';
-  const nmSubmitBtn = document.querySelector('.nm-submit');
-  if(nmSubmitBtn && !nmSubmitBtn.onclick?.toString().includes('closeNM')) nmSubmitBtn.textContent = T('nmSubmit');
+  const nmSubmitBtn = document.getElementById('nm-submit-btn');
+  if(nmSubmitBtn) nmSubmitBtn.textContent = T('nmSubmit');
   const nmCancelBtns = document.querySelectorAll('.nm-cancel');
   nmCancelBtns.forEach(btn=>{ btn.textContent = T('nmCancel'); });
   const nmSuccessH3 = document.querySelector('#nm-success h3');
@@ -5566,24 +5782,23 @@ function clearLegalPdf(i) {
   renderLegalAdm();
 }
 function closeDrivePanel() {
-  document.getElementById('drive-panel').style.display = 'none';
+  closeSheet('drive-panel');
 }
 function closeLegalPdf(e) {
   if(e && e.target !== document.getElementById('legal-pdf-modal')) return;
-  document.getElementById('legal-pdf-modal').style.display = 'none';
+  closeSheet('legal-pdf-modal');
   document.getElementById('legal-pdf-frame').src = '';
 }
 
 // 管理画面
 function closeQR() {
-  document.getElementById('qr-modal').style.display = 'none';
+  closeSheet('qr-modal');
 }
 
 
 // ===================== Netlify自動デプロイ =====================
 function closeTrainingModal() {
-  document.getElementById('training-modal').style.display = 'none';
-  resetSlideTimer();
+  closeSheet('training-modal'); // 自動送りの再開も closeSheet が行う
 }
 function copyGasCode() {
   const code = document.querySelector('#drive-panel [style*="monospace"]').textContent;
@@ -5646,19 +5861,17 @@ function openDrivePanel() {
     statusEl.textContent = '';
     actionsEl.style.display = 'none';
   }
-  document.getElementById('drive-panel').style.display = 'flex';
+  openSheet('drive-panel');
 }
 function openLegalPdf(name, idx) {
   const rec = (D.legalInsp||[])[idx];
   if(!rec || !rec.pdfData) return;
   document.getElementById('legal-pdf-modal-title').textContent = name;
   document.getElementById('legal-pdf-frame').src = rec.pdfData;
-  const modal = document.getElementById('legal-pdf-modal');
-  modal.style.display = 'flex';
+  openSheet('legal-pdf-modal');
 }
 function openQR() {
-  const modal = document.getElementById('qr-modal');
-  modal.style.display = 'flex';
+  openSheet('qr-modal');
 
   // # 以降（表示中のページ）は含めず、アプリの入口URLにする
   const url = window.location.href.split('#')[0];
@@ -5683,11 +5896,11 @@ function openQR() {
       container.innerHTML = '<div style="color:#e00;font-size:12px;padding:20px">QRコード生成エラー<br>ページをリロードしてください</div>';
     }
   }
-
-  modal.addEventListener('click', function handler(e) {
-    if(e.target === modal) { closeQR(); modal.removeEventListener('click', handler); }
-  });
 }
+// 背景（シートの外）を押したら閉じる
+document.getElementById('qr-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeQR();
+});
 
 function openTrainingModal() {
   document.getElementById('tr-date').value = localDateStr();
@@ -5696,8 +5909,7 @@ function openTrainingModal() {
   document.getElementById('tr-category').value = '';
   document.getElementById('tr-note').value = '';
   buildTrainingAttendees();
-  document.getElementById('training-modal').style.display = 'flex';
-  clearInterval(timer);
+  openSheet('training-modal'); // 自動送りの停止も openSheet が行う
 }
 function removeLegalInsp(i) {
   saveLegalAdm();
@@ -6738,10 +6950,10 @@ function toggleHolder(qualIdx, name, labelEl) {
 function openRosterModal() {
   buildRosterList();
   buildDeptList();
-  document.getElementById('roster-modal').style.display = 'flex';
+  openSheet('roster-modal');
 }
 function closeRosterModal() {
-  document.getElementById('roster-modal').style.display = 'none';
+  closeSheet('roster-modal');
 }
 function makeRosterRow(val, listId) {
   const div = document.createElement('div');
@@ -7313,6 +7525,111 @@ function isAnySheetOpen() {
   });
 }
 
+// ===================== 入力シート（モーダル）の開閉 =====================
+// すべての入力画面は openSheet(id) / closeSheet(id) で開閉する（.is-open で表示）
+// Esc で閉じるときに呼ぶ、各シートの閉じる関数（後始末を含むため直接 closeSheet しない）
+const SHEET_CLOSERS = {
+  'nm-modal':'closeNM', 'insp-modal':'closeInspModal', 'patrol-modal':'closePatrolModal',
+  'training-modal':'closeTrainingModal', 'improvement-modal':'closeImprovementModal',
+  'roster-modal':'closeRosterModal', 'excel-panel':'closeExcelPanel', 'drive-panel':'closeDrivePanel',
+  'qr-modal':'closeQR', 'legal-pdf-modal':'closeLegalPdf'
+};
+let sheetStack = [];            // 開いた順（最後が一番上）
+const sheetReturnFocus = {};    // 閉じたときにフォーカスを戻す要素
+
+// シート内のフォーカスできる要素（表示中のもの）
+function sheetFocusables(el) {
+  return [...el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+    .filter(n => !n.disabled && n.type !== 'hidden' && !n.closest('[hidden]') && isSheetPartVisible(n, el));
+}
+// インラインの display:none / 非表示クラスの中にないか（シートの中だけ見る）
+function isSheetPartVisible(node, root) {
+  for (let n = node; n && n !== root; n = n.parentElement) {
+    if (n.style && n.style.display === 'none') return false;
+    if (n.classList && (n.classList.contains('nm-success') && !n.classList.contains('show'))) return false;
+    if (n.classList && (n.classList.contains('insp-abnormal-section') && !n.classList.contains('show'))) return false;
+    if (n.tagName === 'INPUT' && n.type === 'file') return false;
+  }
+  return true;
+}
+// 最初の見出し（なければ最初の操作できる要素）へフォーカスする
+function focusSheet(el) {
+  const heads = [...el.querySelectorAll('.sheet-title, h1, h2')].filter(h => isSheetPartVisible(h, el));
+  const target = heads[0] || sheetFocusables(el)[0];
+  if (!target) return;
+  if (!target.hasAttribute('tabindex') && !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(target.tagName)) target.setAttribute('tabindex', '-1');
+  target.focus({ preventScroll:true });
+}
+
+function openSheet(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const wasOpen = el.classList.contains('is-open');
+  if (!wasOpen) {
+    const act = document.activeElement;
+    sheetReturnFocus[id] = (act && act !== document.body && !el.contains(act)) ? act : null;
+  }
+  el.style.removeProperty('display');
+  el.classList.add('is-open');
+  sheetStack = sheetStack.filter(s => s !== id).concat(id);
+  document.body.classList.add('sheet-open');
+  clearInterval(timer); // 入力中はページを自動で送らない
+  const panel = el.querySelector('.sheet-panel');
+  if (panel && !wasOpen) panel.scrollTop = 0;
+  if (!wasOpen) focusSheet(el);
+  return el;
+}
+
+function closeSheet(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const wasOpen = el.classList.contains('is-open');
+  el.classList.remove('is-open');
+  el.style.removeProperty('display');
+  sheetStack = sheetStack.filter(s => s !== id);
+  const stillOpen = isAnySheetOpen();
+  if (!stillOpen) document.body.classList.remove('sheet-open');
+  const back = sheetReturnFocus[id];
+  delete sheetReturnFocus[id];
+  if (wasOpen && back && back.isConnected && typeof back.focus === 'function') back.focus({ preventScroll:true });
+  // 掲示モードで固定していなければ自動送りを再開（resetSlideTimer が判定）
+  if (wasOpen && !stillOpen && !isAdminOpen()) resetSlideTimer();
+}
+
+// 一番上に開いているシートの id
+function topSheetId() {
+  sheetStack = sheetStack.filter(id => document.getElementById(id)?.classList.contains('is-open'));
+  return sheetStack[sheetStack.length - 1] || '';
+}
+
+// Esc で一番上のシートを閉じる／Tab のフォーカスをシートの中に留める
+document.addEventListener('keydown', e => {
+  const id = topSheetId();
+  if (!id) return;
+  const el = document.getElementById(id);
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    const fn = window[SHEET_CLOSERS[id]];
+    if (typeof fn === 'function') fn(); else closeSheet(id);
+    return;
+  }
+  if (e.key !== 'Tab') return;
+  const items = sheetFocusables(el);
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  const act = document.activeElement;
+  if (!el.contains(act)) { e.preventDefault(); first.focus(); return; }
+  if (e.shiftKey && (act === first || !items.includes(act))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && act === last) { e.preventDefault(); first.focus(); }
+});
+
+// ボタンの押下状態（.active と aria-pressed）をそろえる
+function setPressed(btn, on) {
+  if (!btn) return;
+  btn.classList.toggle('active', !!on);
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+
 document.addEventListener('keydown',e=>{
   // 矢印キーでのページ送りは掲示モードだけ。管理画面・入力画面・入力欄では無効
   if(!isKiosk() || isAdminOpen() || isAnySheetOpen()) return;
@@ -7354,14 +7671,37 @@ function openNM() {
   document.getElementById('nm-comment').value='';
   document.getElementById('nm-previews').innerHTML='';
   nmPhotos=[];
-  document.getElementById('nm-modal').style.display = 'flex';
-  clearInterval(timer);
+  renderNMTypeButtons();
+  openSheet('nm-modal');
 }
 
 function closeNM() {
-  document.getElementById('nm-modal').style.display = 'none';
-  resetSlideTimer();
+  closeSheet('nm-modal');
 }
+
+// 危険の種類：select#nm-type の選択肢から大きなボタンを作り、値を同期する（データは select の値のまま）
+function renderNMTypeButtons() {
+  const sel = document.getElementById('nm-type');
+  const box = document.getElementById('nm-type-btns');
+  if (!sel || !box) return;
+  box.innerHTML = Array.from(sel.options).map((o, i) => i === 0 ? '' :
+    `<button type="button" class="choice-btn" aria-pressed="false" onclick="pickNMType(${i})">${planEsc(o.textContent)}</button>`
+  ).join('');
+  syncNMTypeButtons();
+}
+function pickNMType(i) {
+  const sel = document.getElementById('nm-type');
+  if (!sel) return;
+  sel.selectedIndex = i;
+  syncNMTypeButtons();
+}
+function syncNMTypeButtons() {
+  const sel = document.getElementById('nm-type');
+  const btns = document.querySelectorAll('#nm-type-btns button');
+  btns.forEach((b, k) => setPressed(b, sel && sel.selectedIndex === k + 1));
+}
+document.getElementById('nm-type').addEventListener('change', syncNMTypeButtons);
+document.addEventListener('lang-changed', renderNMTypeButtons); // 選択肢の言語に合わせて作り直す
 
 function handlePhotos(files) {
   Array.from(files).forEach(f=>{
@@ -7457,6 +7797,7 @@ async function submitNM() {
 
   document.getElementById('nm-form-section').style.display='none';
   document.getElementById('nm-success').classList.add('show');
+  focusSheet(document.getElementById('nm-modal'));
 }
 
 // Drag & drop support
@@ -7693,21 +8034,17 @@ function openInspSelect(type) {
 
   // build list
   document.getElementById('insp-select-list').innerHTML = (D.inspections||[]).map((p,i) => {
-    const clr = p.status==='ok'?'#128A3E':p.status==='warn'?'#B45309':'#0B63CE';
-    return `<div style="display:flex;align-items:center;justify-content:space-between;
-      background:rgba(0,0,0,.035);border:1px solid rgba(0,0,0,.06);
-      border-left:3px solid ${clr};border-radius:4px;padding:11px 16px;cursor:pointer"
-      onclick="openInspDetail(${i})">
-      <span style="font-size:14px">${p.icon} ${p.name}</span>
-      <span style="font-size:15px;color:${clr};font-weight:700">
-        ${p.status==='ok'?'✓ 正常':p.status==='warn'?'▲ 要確認':'! 期日超過'}
-        &nbsp;→&nbsp;点検入力
-      </span>
-    </div>`;
+    const tone = p.status==='ok' ? 'ok' : p.status==='warn' ? 'warn' : 'danger';
+    const label = p.status==='ok' ? '正常' : p.status==='warn' ? '要確認' : '期日超過';
+    return `<button type="button" class="sheet-list-row" onclick="openInspDetail(${i})">
+      <span class="slr-name">${p.icon||''} ${planEsc(p.name)}</span>
+      ${chip(tone, label)}
+      <span class="slr-go" aria-hidden="true">›</span>
+    </button>`;
   }).join('');
 
-  document.getElementById('insp-modal').style.display = 'flex';
-  clearInterval(timer);
+  document.getElementById('insp-modal').setAttribute('aria-labelledby', 'insp-sheet-title');
+  openSheet('insp-modal');
 }
 
 function openInspDetail(idx) {
@@ -7726,18 +8063,12 @@ function openInspDetail(idx) {
   const hasTabs = (p.dailyCheckpoints||[]).length > 0 || (p.monthlyCheckpoints||[]).length > 0;
   if (hasTabs) {
     cpList.innerHTML = `
-      <div style="display:flex;gap:0;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.10);margin-bottom:10px;flex-shrink:0">
-        <button id="insp-tab-daily" onclick="switchInspTab('daily')"
-          style="flex:1;padding:9px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;border:none;background:#128A3E;color:#FFFFFF;letter-spacing:1px;">
-          🌅 始業前点検
-        </button>
-        <button id="insp-tab-monthly" onclick="switchInspTab('monthly')"
-          style="flex:1;padding:9px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;border:none;background:rgba(0,0,0,.055);color:var(--sub);letter-spacing:1px;">
-          📅 月次点検
-        </button>
+      <div class="seg" role="tablist" aria-label="点検の種類">
+        <button type="button" class="seg-btn" id="insp-tab-daily" role="tab" aria-selected="true" aria-controls="insp-cp-daily" onclick="switchInspTab('daily')">始業前点検</button>
+        <button type="button" class="seg-btn" id="insp-tab-monthly" role="tab" aria-selected="false" aria-controls="insp-cp-monthly" onclick="switchInspTab('monthly')">月次点検</button>
       </div>
-      <div id="insp-cp-daily" class="insp-cp-rows"></div>
-      <div id="insp-cp-monthly" class="insp-cp-rows" style="display:none"></div>`;
+      <div id="insp-cp-daily" class="insp-cp-rows" role="tabpanel" aria-labelledby="insp-tab-daily"></div>
+      <div id="insp-cp-monthly" class="insp-cp-rows" role="tabpanel" aria-labelledby="insp-tab-monthly" style="display:none"></div>`;
     renderInspCpRows('daily',   p.dailyCheckpoints   || []);
     renderInspCpRows('monthly', p.monthlyCheckpoints || []);
     currentInspTab = 'daily';
@@ -7763,18 +8094,19 @@ function openInspDetail(idx) {
     const cps = p.checkpoints || p.dailyCheckpoints || [];
     document.getElementById('insp-cp-list').innerHTML = cps.map((cp,ci)=>`
       <div class="insp-cp-row">
-        <div class="insp-cp-label">${ci+1}. ${cp||'(点検項目'+(ci+1)+')'}</div>
-        <div class="insp-cp-btns">
-          <button class="cp-btn cp-ok" id="cpok-${ci}" onclick="setCpState(${ci},'ok')">✓ 正常</button>
-          <button class="cp-btn cp-ng" id="cpng-${ci}" onclick="setCpState(${ci},'ng')">✗ 異常</button>
+        <div class="insp-cp-label"><strong>${ci+1}.</strong> ${cp||'(点検項目'+(ci+1)+')'}</div>
+        <div class="insp-cp-btns" role="group" aria-label="${ci+1}. の結果">
+          <button type="button" class="cp-btn cp-ok" id="cpok-${ci}" aria-pressed="false" onclick="setCpState(${ci},'ok')">✓ 正常</button>
+          <button type="button" class="cp-btn cp-ng" id="cpng-${ci}" aria-pressed="false" onclick="setCpState(${ci},'ng')">✗ 異常</button>
         </div>
       </div>`).join('');
   }
 
   // reset 3S buttons
   [0,1,2].forEach(i=>{
-    document.getElementById(`3sok-${i}`)?.classList.remove('active');
-    document.getElementById(`3sng-${i}`)?.classList.remove('active');
+    setPressed(document.getElementById(`3sok-${i}`), false);
+    setPressed(document.getElementById(`3sng-${i}`), false);
+    document.getElementById(`3sng-${i}`)?.closest('.insp-cp-row')?.classList.remove('is-ng');
   });
   inspS3State = ['','',''];
   // reset worksite photo
@@ -7785,6 +8117,12 @@ function openInspDetail(idx) {
   document.getElementById('insp-photo-preview').innerHTML = inspPhotoData
     ? `<div class="nm-preview-item"><img src="${inspPhotoData}"><button class="nm-preview-del" onclick="clearInspPhoto()">✕</button></div>`
     : '';
+  const modal = document.getElementById('insp-modal');
+  modal.setAttribute('aria-labelledby', 'insp-detail-title');
+  const panel = modal.querySelector('.sheet-panel');
+  if (panel) panel.scrollTop = 0;
+  if (modal.classList.contains('is-open')) focusSheet(modal);
+  updateInspProgress();
 }
 
 
@@ -7802,14 +8140,27 @@ function switchInspTab(tab) {
   if (!daily || !monthly) return;
   daily.style.display   = tab === 'daily'   ? '' : 'none';
   monthly.style.display = tab === 'monthly' ? '' : 'none';
-  if (tabD) {
-    tabD.style.background = tab === 'daily' ? '#128A3E' : 'rgba(0,0,0,.055)';
-    tabD.style.color      = tab === 'daily' ? '#000'    : 'var(--sub)';
-  }
-  if (tabM) {
-    tabM.style.background = tab === 'monthly' ? 'var(--accent)' : 'rgba(0,0,0,.055)';
-    tabM.style.color      = tab === 'monthly' ? '#fff'          : 'var(--sub)';
-  }
+  if (tabD) tabD.setAttribute('aria-selected', String(tab === 'daily'));
+  if (tabM) tabM.setAttribute('aria-selected', String(tab === 'monthly'));
+  updateInspProgress();
+}
+
+// 点検の進み具合（表示中のタブで選んだ項目数）
+function updateInspProgress() {
+  const el = document.getElementById('insp-progress');
+  if (!el) return;
+  const states = document.getElementById('insp-cp-daily')
+    ? (currentInspTab === 'monthly' ? inspMonthlyCpState : inspDailyCpState)
+    : (inspCpState || []);
+  el.textContent = states.length ? `${states.filter(s => s).length} / ${states.length} 項目` : '';
+}
+
+// 正常／異常ボタンの状態と、異常の行の印をそろえる
+function markCpRow(okBtn, ngBtn, state) {
+  setPressed(okBtn, state === 'ok');
+  setPressed(ngBtn, state === 'ng');
+  const row = (okBtn || ngBtn)?.closest('.insp-cp-row');
+  if (row) row.classList.toggle('is-ng', state === 'ng');
 }
 
 function renderInspCpRows(type, cps) {
@@ -7823,10 +8174,10 @@ function renderInspCpRows(type, cps) {
   if (type === 'monthly') inspMonthlyCpState = cps.map(()=>'');
   el.innerHTML = cps.map((cp, ci) => `
     <div class="insp-cp-row" id="insp-cp-${type}-row-${ci}">
-      <div class="insp-cp-label">${ci+1}. ${cp}</div>
-      <div class="insp-cp-btns">
-        <button class="cp-btn cp-ok" id="${type}-cpok-${ci}" onclick="setTabCpState('${type}',${ci},'ok')">✓ 正常</button>
-        <button class="cp-btn cp-ng" id="${type}-cpng-${ci}" onclick="setTabCpState('${type}',${ci},'ng')">✗ 異常</button>
+      <div class="insp-cp-label"><strong>${ci+1}.</strong> ${cp}</div>
+      <div class="insp-cp-btns" role="group" aria-label="${ci+1}. の結果">
+        <button type="button" class="cp-btn cp-ok" id="${type}-cpok-${ci}" aria-pressed="false" onclick="setTabCpState('${type}',${ci},'ok')">✓ 正常</button>
+        <button type="button" class="cp-btn cp-ng" id="${type}-cpng-${ci}" aria-pressed="false" onclick="setTabCpState('${type}',${ci},'ng')">✗ 異常</button>
       </div>
     </div>`).join('');
 }
@@ -7834,8 +8185,8 @@ function renderInspCpRows(type, cps) {
 function setTabCpState(type, ci, state) {
   if (type === 'daily')   inspDailyCpState[ci]   = state;
   if (type === 'monthly') inspMonthlyCpState[ci] = state;
-  document.getElementById(`${type}-cpok-${ci}`)?.classList.toggle('active', state==='ok');
-  document.getElementById(`${type}-cpng-${ci}`)?.classList.toggle('active', state==='ng');
+  markCpRow(document.getElementById(`${type}-cpok-${ci}`), document.getElementById(`${type}-cpng-${ci}`), state);
+  updateInspProgress();
   // show abnormal section if any NG (3S含む全チェック対象)
   const allStates = [...(inspCpState||[]), ...inspS3State, ...inspDailyCpState, ...inspMonthlyCpState];
   const hasNg = allStates.some(s => s === 'ng');
@@ -7844,8 +8195,8 @@ function setTabCpState(type, ci, state) {
 
 function setCpState(ci, state) {
   inspCpState[ci] = state;
-  document.getElementById(`cpok-${ci}`).classList.toggle('active', state==='ok');
-  document.getElementById(`cpng-${ci}`).classList.toggle('active', state==='ng');
+  markCpRow(document.getElementById(`cpok-${ci}`), document.getElementById(`cpng-${ci}`), state);
+  updateInspProgress();
   // show abnormal section if any NG (3S含む全チェック対象)
   const allStates = [...inspCpState, ...inspS3State, ...inspDailyCpState, ...inspMonthlyCpState];
   const hasNg = allStates.some(s=>s==='ng');
@@ -7854,8 +8205,7 @@ function setCpState(ci, state) {
 
 function set3sState(ci, state) {
   inspS3State[ci] = state;
-  document.getElementById(`3sok-${ci}`)?.classList.toggle('active', state==='ok');
-  document.getElementById(`3sng-${ci}`)?.classList.toggle('active', state==='ng');
+  markCpRow(document.getElementById(`3sok-${ci}`), document.getElementById(`3sng-${ci}`), state);
   // show abnormal section if any NG (3S含む全チェック対象)
   const allStates = [...(inspCpState||[]), ...inspS3State, ...inspDailyCpState, ...inspMonthlyCpState];
   const hasNg = allStates.some(s => s === 'ng');
@@ -7981,16 +8331,17 @@ function submitInsp() {
   showToast(p.status!=='ok' ? '⚠ 異常あり — 設備点検を記録しました' : '✓ 設備点検を記録しました');
   document.getElementById('insp-detail-section').style.display='none';
   document.getElementById('insp-success').classList.add('show');
+  focusSheet(document.getElementById('insp-modal'));
 }
 
 function backToInspSelect() {
   document.getElementById('insp-detail-section').style.display='none';
   openInspSelect();
+  focusSheet(document.getElementById('insp-modal')); // 開いたままなので見出しへフォーカスを移す
 }
 
 function closeInspModal() {
-  const modal = document.getElementById('insp-modal');
-  modal.style.display = 'none';
+  closeSheet('insp-modal');
   // 内部状態をリセット
   const succ = document.getElementById('insp-success');
   if (succ) succ.classList.remove('show');
@@ -7998,7 +8349,6 @@ function closeInspModal() {
   if (detail) detail.style.display = 'none';
   const sel = document.getElementById('insp-select-section');
   if (sel) sel.style.display = '';
-  resetSlideTimer();
 }
 
 document.getElementById('insp-modal').addEventListener('click',e=>{
@@ -8214,10 +8564,10 @@ function startAutoSync() {
 
 // ===================== CSV書き出し =====================
 function openExcelExport() {
-  document.getElementById('excel-panel').style.display = 'flex';
+  openSheet('excel-panel');
 }
 function closeExcelPanel() {
-  document.getElementById('excel-panel').style.display = 'none';
+  closeSheet('excel-panel');
 }
 
 function downloadCSV(filename, rows) {
@@ -8374,10 +8724,9 @@ function handleForkPlanPdf(event) {
 
 function viewForkPlanPdf() {
   if (!D.forkPlan.pdfData) return;
-  const modal = document.getElementById('legal-pdf-modal');
   document.getElementById('legal-pdf-modal-title').textContent = D.forkPlan.pdfName || 'フォークリフト作業計画書';
   document.getElementById('legal-pdf-frame').src = D.forkPlan.pdfData;
-  modal.style.display = 'flex';
+  openSheet('legal-pdf-modal');
 }
 
 function deleteForkPlanPdf() {
@@ -8437,11 +8786,11 @@ function openImprovementModal(repIdx, itemIdx) {
     improvementPhotos = [...item.improvementPhotos];
   }
 
-  document.getElementById('improvement-modal').style.display = 'block';
+  openSheet('improvement-modal');
 }
 
 function closeImprovementModal() {
-  document.getElementById('improvement-modal').style.display = 'none';
+  closeSheet('improvement-modal');
   improvementTarget = null;
   improvementPhotos = [];
 }
@@ -8530,32 +8879,29 @@ function openPatrolModal() {
       ${items.map(it => `
         <div class="patrol-cp-item" id="pcp-${it.idx}">
           <div class="patrol-cp-label">${it.item}</div>
-          <div class="patrol-cp-btns">
-            <button class="patrol-cp-btn patrol-cp-btn-ok" onclick="setPatrolCP(${it.idx},'ok')">✓ 良好</button>
-            <button class="patrol-cp-btn patrol-cp-btn-ng" onclick="setPatrolCP(${it.idx},'ng')">✗ 指摘</button>
-            <button class="patrol-cp-btn patrol-cp-btn-na active" onclick="setPatrolCP(${it.idx},'na')">— 対象外</button>
+          <div class="patrol-cp-btns" role="group" aria-label="${it.item}">
+            <button type="button" class="patrol-cp-btn patrol-cp-btn-ok" aria-pressed="false" onclick="setPatrolCP(${it.idx},'ok')">✓ 良好</button>
+            <button type="button" class="patrol-cp-btn patrol-cp-btn-ng" aria-pressed="false" onclick="setPatrolCP(${it.idx},'ng')">✗ 指摘</button>
+            <button type="button" class="patrol-cp-btn patrol-cp-btn-na active" aria-pressed="true" onclick="setPatrolCP(${it.idx},'na')">— 対象外</button>
           </div>
         </div>
         <div class="patrol-ng-comment" id="pcp-comment-${it.idx}">
-          <input type="text" placeholder="指摘内容を入力">
+          <input type="text" placeholder="指摘内容を入力" aria-label="指摘内容">
         </div>`).join('')}
     </div>`).join('');
-  document.getElementById('patrol-modal').style.display = 'flex';
-  document.getElementById('patrol-modal').style.alignItems = 'flex-start';
-  clearInterval(timer);
+  openSheet('patrol-modal');
 }
 
 function closePatrolModal() {
-  document.getElementById('patrol-modal').style.display = 'none';
-  resetSlideTimer();
+  closeSheet('patrol-modal');
 }
 
 function setPatrolCP(idx, result) {
   const el = document.getElementById('pcp-' + idx);
-  el.querySelectorAll('.patrol-cp-btn').forEach(b => b.classList.remove('active'));
-  if (result === 'ok') el.querySelector('.patrol-cp-btn-ok').classList.add('active');
-  else if (result === 'ng') el.querySelector('.patrol-cp-btn-ng').classList.add('active');
-  else el.querySelector('.patrol-cp-btn-na').classList.add('active');
+  setPressed(el.querySelector('.patrol-cp-btn-ok'), result === 'ok');
+  setPressed(el.querySelector('.patrol-cp-btn-ng'), result === 'ng');
+  setPressed(el.querySelector('.patrol-cp-btn-na'), result !== 'ok' && result !== 'ng');
+  el.classList.toggle('is-ng', result === 'ng');
   const cmt = document.getElementById('pcp-comment-' + idx);
   if (cmt) cmt.style.display = result === 'ng' ? 'block' : 'none';
 }
