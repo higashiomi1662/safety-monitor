@@ -22,6 +22,7 @@ export const readIndexHtml = () => {
  * @param {string} [opts.search] 初期 URL のクエリ
  * @param {Record<string,string>} [opts.localStorage] 事前に入れておく localStorage
  * @param {Record<string,string>} [opts.sessionStorage] 事前に入れておく sessionStorage
+ * @param {string|number} [opts.now] 現在時刻を固定する（例: '2026-10-16T23:30:00Z'）
  * @param {(win: any) => void} [opts.beforeParse] 追加の前処理
  */
 export const loadApp = (opts = {}) => {
@@ -38,6 +39,20 @@ export const loadApp = (opts = {}) => {
     virtualConsole,
     beforeParse(win) {
       win.innerWidth = width
+      if (opts.now !== undefined) {
+        const RealDate = win.Date
+        const fixed = new RealDate(opts.now).getTime()
+        class FixedDate extends RealDate {
+          constructor(...args) {
+            if (args.length === 0) super(fixed)
+            else super(...args)
+          }
+          static now() {
+            return fixed
+          }
+        }
+        win.Date = FixedDate
+      }
       win.matchMedia = (q) => {
         const max = /max-width:\s*(\d+)px/.exec(q)
         const min = /min-width:\s*(\d+)px/.exec(q)
