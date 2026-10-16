@@ -8077,9 +8077,9 @@ function collectActionItems(data, today = localDateStr()) {
   const rank = { danger: 0, warn: 1 };
   return out.map((x, i) => ({ x, i })).sort((a, b) => (rank[a.x.tone] - rank[b.x.tone]) || (a.i - b.i)).map(o => o.x);
 }
-// 年間安全衛生計画のうち、今月に予定がある項目
+// 年間安全衛生計画のうち、今月に予定がある項目（plan / result は 0=1月 の並び）
 function currentMonthPlan(data, now = new Date()) {
-  const idx = (now.getMonth() + 1 - 4 + 12) % 12; // 年度月（0=4月）
+  const idx = now.getMonth();
   return ((data.plan && data.plan.items) || [])
     .filter(it => (it.plan || [])[idx])
     .map(it => ({ name: it.name, done: !!(it.result || [])[idx] }));
