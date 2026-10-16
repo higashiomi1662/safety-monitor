@@ -1547,6 +1547,65 @@ body.mode-app #qual-table-wrap{ flex:none; max-height:70vh; overflow-x:auto; bac
 @media (min-width:600px) and (max-width:1023px){
   body.mode-app #d-cross-table{ --qual-name-w:170px; --qual-col-w:50px; }
 }
+
+/* ---------- 年間安全衛生計画：横スクロール枠＋先頭列の固定（通常表示のみ） ---------- */
+.plan-now{ display:none; }
+body.mode-app #slides .plan-meta{ font-size:var(--fs-sm); flex-wrap:wrap; gap:var(--sp-2); }
+body.mode-app #slides .plan-meta span:first-child{ font-size:var(--fs-md); letter-spacing:0; }
+body.mode-app #slides .plan-legend{ font-size:var(--fs-sm); justify-content:flex-start; flex-wrap:wrap; }
+body.mode-app #slides .plan-wrap{ overflow-x:auto; background:var(--c-surface); border-color:var(--c-line); border-radius:var(--r-md); -webkit-overflow-scrolling:touch; }
+body.mode-app #slides .plan-table{
+  --pl-cat-w:88px; --pl-name-w:200px; --pl-kind-w:52px;
+  width:max-content; min-width:100%;
+}
+body.mode-app #slides .plan-table th, body.mode-app #slides .plan-table td{ padding:6px 8px; }
+body.mode-app #slides .plan-table thead th.pl-mo{ min-width:44px; }
+body.mode-app #slides .plan-table .pl-h-cat, body.mode-app #slides .plan-table td.pl-cat{
+  position:sticky; left:0; z-index:2; box-sizing:border-box;
+  width:var(--pl-cat-w); min-width:var(--pl-cat-w); max-width:var(--pl-cat-w);
+  white-space:normal; letter-spacing:0; background:#F2F6FB;
+}
+body.mode-app #slides .plan-table .pl-h-name, body.mode-app #slides .plan-table td.pl-name{
+  position:sticky; left:var(--pl-cat-w); z-index:2; box-sizing:border-box;
+  width:var(--pl-name-w); min-width:var(--pl-name-w); max-width:var(--pl-name-w);
+  background:var(--c-surface);
+}
+body.mode-app #slides .plan-table .pl-h-kind, body.mode-app #slides .plan-table td.pl-kind{
+  position:sticky; left:calc(var(--pl-cat-w) + var(--pl-name-w)); z-index:2; box-sizing:border-box;
+  width:var(--pl-kind-w); min-width:var(--pl-kind-w); max-width:var(--pl-kind-w);
+  letter-spacing:0; box-shadow:2px 0 0 var(--c-line);
+}
+body.mode-app #slides .plan-table .pl-h-kind{ background:#E8F0FA; }
+body.mode-app #slides .plan-table td.pl-kind-plan{ background:var(--c-info-bg); color:var(--c-info); }
+body.mode-app #slides .plan-table td.pl-kind-result{ background:var(--c-ok-bg); color:var(--c-ok); }
+body.mode-app #slides .plan-table thead .pl-h-cat, body.mode-app #slides .plan-table thead .pl-h-name,
+body.mode-app #slides .plan-table thead .pl-h-kind{ z-index:4; }
+body.mode-app #slides .plan-table tr.pl-row-plan td.pl-cell{ color:var(--c-info); }
+body.mode-app #slides .plan-table tr.pl-row-result td.pl-cell{ color:var(--c-ok); }
+body.mode-app #slides .plan-table td.pl-note{ font-size:var(--fs-xs); color:var(--c-sub); }
+/* 全体表の開閉（見出しはスマホだけ） */
+.plan-details{ display:flex; flex-direction:column; gap:var(--sp-2); min-width:0; }
+.plan-details > summary{
+  min-height:var(--tap); display:flex; align-items:center; gap:var(--sp-2); padding:0 var(--sp-4);
+  background:var(--c-surface); border:1px solid var(--c-line); border-radius:var(--r-md);
+  color:var(--c-info); font-size:var(--fs-md); font-weight:700; cursor:pointer; list-style:none;
+}
+.plan-details > summary::-webkit-details-marker{ display:none; }
+.plan-details > summary::before{ content:'▸'; color:var(--c-sub); }
+.plan-details[open] > summary::before{ content:'▾'; }
+.plan-now-list{ list-style:none; margin:0; padding:0; }
+.plan-now-list li{ min-height:56px; display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); border-top:1px solid var(--c-line-soft); padding:var(--sp-1) 0; }
+.plan-now-list li:first-child{ border-top:0; }
+.plan-now-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.plan-now-text strong{ font-size:var(--fs-md); color:var(--c-ink); }
+.plan-now-text span{ font-size:var(--fs-sm); color:var(--c-sub); }
+@media (max-width:599px){
+  body.mode-app .plan-now{ display:block; }
+  body.mode-app #slides .plan-table{ --pl-cat-w:64px; --pl-name-w:132px; --pl-kind-w:44px; }
+}
+@media (min-width:600px){
+  .plan-details > summary{ display:none; }
+}
 </style>
 <style id="app-ui">
 /* ===================================================================
@@ -2186,6 +2245,8 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
             <div class="sl-label">Annual Safety &amp; Health Plan</div>
             <h2 class="sl-h1">年間 <span>安全衛生計画</span></h2>
             <div class="plan-meta"><span id="d-plan-title">2026年度 安全衛生計画</span><span id="d-plan-date"></span></div>
+            <!-- スマホ：今月の計画と実績（全体表の上に置く） -->
+            <section class="panel plan-now app-only" id="d-plan-now" aria-label="今月の計画と実績"></section>
             <div class="plan-wrap"><table class="plan-table" id="d-plan"></table></div>
             <div class="plan-legend">
               <span><i class="lg-plan"></i>計画</span>
@@ -4229,7 +4290,7 @@ function renderPlan(){
   const curMo = new Date().getMonth()+1;
   const tEl=document.getElementById('d-plan-title'); if(tEl) tEl.textContent = P.title||'';
   const dEl=document.getElementById('d-plan-date');  if(dEl) dEl.textContent  = P.date||'';
-  let h = '<thead><tr><th>分類</th><th>実施項目</th><th></th>';
+  let h = '<thead><tr><th class="pl-h-cat">分類</th><th class="pl-h-name">実施項目</th><th class="pl-h-kind"></th>';
   for(let m=1;m<=12;m++) h += `<th class="pl-mo${m===curMo?' cur':''}">${m}</th>`;
   h += '<th>備考</th></tr></thead><tbody>';
   items.forEach((it,i)=>{
@@ -4250,9 +4311,53 @@ function renderPlan(){
     h += '</tr>';
   });
   el.innerHTML = h + '</tbody>';
+  renderPlanNow(items, curMo);
+  ensurePlanDetails();
+}
+// スマホ用「今月の計画と実績」カード（plan / result は 0=1月 の暦月並び）
+function renderPlanNow(items, curMo){
+  const host = document.getElementById('d-plan-now'); if(!host) return;
+  const idx = curMo - 1;
+  const list = items.filter(it => (it.plan||[])[idx]);
+  host.innerHTML = '<h3 class="panel-title">' + curMo + '月の計画と実績</h3>' + (list.length
+    ? '<ul class="plan-now-list">' + list.map(it => {
+        const done = !!(it.result||[])[idx];
+        return '<li><div class="plan-now-text"><strong>' + planEsc(it.name) + '</strong>'
+          + '<span>' + planEsc(it.cat||'') + '　計画 ' + planEsc(it.plan[idx]) + (done ? '／実績 ' + planEsc(it.result[idx]) : '') + '</span></div>'
+          + chip(done ? 'ok' : 'neutral', done ? '実施済' : '未実施') + '</li>';
+      }).join('') + '</ul>'
+    : '<p class="empty">今月の計画はありません</p>');
+}
+// 通常表示では全体表を <details> に入れる（スマホは閉じる、タブレット以上は開く）。掲示モードは従来どおり
+function ensurePlanDetails(){
+  if(!document.body.classList.contains('mode-app')) return;
+  const w = document.querySelector('#slide-months .plan-wrap');
+  if(!w || w.parentElement.classList.contains('plan-details')) return;
+  const det = document.createElement('details');
+  det.className = 'plan-details';
+  det.innerHTML = '<summary>年間の計画表（全体）を開く</summary>';
+  w.parentNode.insertBefore(det, w);
+  det.appendChild(w);
+  const legend = document.querySelector('#slide-months .plan-legend');
+  if(legend) det.appendChild(legend);
+  const mq = window.matchMedia('(max-width:599px)');
+  det.open = !mq.matches;
+  // スマホ幅からタブレット幅以上に広げたときは開く（見出しを隠すため）
+  mq.addEventListener('change', e => { if(!e.matches) det.open = true; });
+}
+// 表示時に今月の列が見える位置まで横スクロールする（先頭の固定列の幅と 1 か月分の余白を引く）
+function scrollPlanToCurrentMonth(){
+  const w = document.querySelector('#slide-months .plan-wrap');
+  const th = w && w.querySelector('th.pl-mo.cur');
+  if(!th) return;
+  const fixed = ['.pl-h-cat','.pl-h-name','.pl-h-kind']
+    .reduce((sum, sel) => { const c = w.querySelector('thead ' + sel); return sum + (c ? c.offsetWidth : 0); }, 0);
+  w.scrollLeft = Math.max(0, th.offsetLeft - fixed - th.offsetWidth);
 }
 // ---- 計画表の自動スクロール（項目が多く画面に収まらない場合）----
+// 掲示モードだけで動かす（通常表示ではユーザーのスクロールを奪わない）
 function planAutoScrollTick(){
+  if(!document.body.classList.contains('mode-kiosk')) return;
   const w = document.querySelector('#slide-months .plan-wrap');
   const sec = document.getElementById('slide-months');
   if(!w || !sec) return;
@@ -7346,7 +7451,7 @@ const PAGE_META = {
   'slide-policy':        { group:'board',   icon:'shield',   ja:'安全衛生方針',     vn:'Chính sách an toàn' },
   'slide-org':           { group:'board',   icon:'users',    ja:'組織図',           vn:'Sơ đồ tổ chức' },
   'slide-goals':         { group:'board',   icon:'target',   ja:'年間目標',         vn:'Mục tiêu năm' },
-  'slide-months':        { group:'board',   icon:'calendar', ja:'年間安全衛生計画', vn:'Kế hoạch năm' },
+  'slide-months':        { group:'board',   icon:'calendar', ja:'年間安全衛生計画', vn:'Kế hoạch năm', onShow:()=>scrollPlanToCurrentMonth() },
   'slide-monthly-check': { group:'report',  icon:'listcheck',ja:'月次活動チェック', vn:'Kiểm tra hoạt động tháng', onShow:()=>renderMonthlyCheck() },
   'slide-training':      { group:'records', sub:'activity', icon:'cap',    ja:'教育訓練',         vn:'Đào tạo',              onShow:()=>renderTrainingSlide() },
   'slide-ra':            { group:'records', sub:'activity', icon:'alert',  ja:'リスクアセスメント', vn:'Đánh giá rủi ro',    onShow:()=>renderDisplay() },

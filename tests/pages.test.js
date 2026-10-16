@@ -163,3 +163,98 @@ describe('保有資格ページ', () => {
     expect(css).toMatch(/body\.mode-kiosk \.qual-mobile|\.qual-mobile\{\s*display:none/)
   })
 })
+
+// ===================== 年間安全衛生計画 =====================
+const planData = {
+  title: '2026年度 安全衛生計画',
+  date: '',
+  items: [
+    // plan / result は 0=1月 の暦月並び（index 9 = 10月）
+    { cat: '会議', name: '安全衛生委員会', plan: ['○', '○', '○', '○', '○', '○', '○', '○', '○', '○', '○', '○'], result: ['', '', '', '', '', '', '', '', '', '○', '', ''], note: '' },
+    { cat: '教育', name: '雇入れ時教育', plan: ['', '', '', '○', '', '', '', '', '', '', '', ''], result: [], note: '' },
+    { cat: '教育', name: '安全衛生月間の行事', plan: ['', '', '', '', '', '', '', '', '', '○', '', ''], result: [], note: '' },
+  ],
+}
+
+describe('年間安全衛生計画ページ', () => {
+  it('分類・実施項目・計画/実績の列に固定用のクラスを付け、今月の列に印を付ける', () => {
+    app = loadApp({ now: '2026-10-17T09:00:00+09:00' })
+    const { win, doc } = app
+    win.D.plan = planData
+    win.renderPlan()
+    const tbl = doc.getElementById('d-plan')
+    expect(tbl.querySelector('thead th.pl-h-cat').textContent).toBe('分類')
+    expect(tbl.querySelector('thead th.pl-h-name').textContent).toBe('実施項目')
+    expect(tbl.querySelector('thead th.pl-h-kind')).not.toBeNull()
+    expect(tbl.querySelector('thead th.pl-mo.cur').textContent).toBe('10')
+    const css = doc.getElementById('ui-pages').textContent
+    expect(css).toMatch(/body\.mode-app[^{]*\.pl-h-cat[^{]*\{[^}]*position:sticky/)
+  })
+
+  it('スマホ用に「今月の計画と実績」カードを作る（暦月で判定）', () => {
+    app = loadApp({ width: 390, now: '2026-10-17T09:00:00+09:00' })
+    const { win, doc } = app
+    win.D.plan = planData
+    win.renderPlan()
+    const card = doc.getElementById('d-plan-now')
+    expect(card.querySelector('.panel-title').textContent).toBe('10月の計画と実績')
+    const rows = [...card.querySelectorAll('li')].map((li) => [li.querySelector('strong').textContent, li.querySelector('.chip').textContent])
+    expect(rows).toEqual([
+      ['安全衛生委員会', '実施済'],
+      ['安全衛生月間の行事', '未実施'],
+    ])
+  })
+
+  it('通常表示では全体表を <details> に入れ、スマホでは閉じた状態にする', () => {
+    app = loadApp({ width: 390 })
+    const { win, doc } = app
+    win.renderPlan()
+    const det = doc.querySelector('#slide-months details.plan-details')
+    expect(det).not.toBeNull()
+    expect(det.querySelector('.plan-wrap')).not.toBeNull()
+    expect(det.open).toBe(false)
+    expect(det.querySelector('summary').textContent).toContain('年間の計画表')
+    // 何度描画しても入れ子にしない
+    win.renderPlan()
+    expect(doc.querySelectorAll('#slide-months details.plan-details').length).toBe(1)
+  })
+
+  it('タブレット以上では <details> を開いておく。掲示モードでは <details> を使わない', () => {
+    app = loadApp({ width: 1024 })
+    app.win.renderPlan()
+    expect(app.doc.querySelector('#slide-months details.plan-details').open).toBe(true)
+    app.close()
+    app = loadApp({ search: '?kiosk=1' })
+    app.win.renderPlan()
+    expect(app.doc.querySelector('#slide-months details')).toBeNull()
+  })
+
+  it('表示時に今月の列が見える位置まで横にスクロールする', () => {
+    app = loadApp({ now: '2026-10-17T09:00:00+09:00' })
+    const { win, doc } = app
+    win.D.plan = planData
+    win.renderPlan()
+    const wrap = doc.querySelector('#slide-months .plan-wrap')
+    const set = (sel, prop, v) => Object.defineProperty(doc.querySelector(sel), prop, { value: v, configurable: true })
+    set('#d-plan th.pl-h-cat', 'offsetWidth', 88)
+    set('#d-plan th.pl-h-name', 'offsetWidth', 200)
+    set('#d-plan th.pl-h-kind', 'offsetWidth', 52)
+    set('#d-plan th.pl-mo.cur', 'offsetLeft', 900)
+    set('#d-plan th.pl-mo.cur', 'offsetWidth', 44)
+    win.scrollPlanToCurrentMonth()
+    // 固定列の幅と 1 か月分の余白を引いた位置
+    expect(wrap.scrollLeft).toBe(900 - 88 - 200 - 52 - 44)
+  })
+
+  it('計画表の自動スクロールは掲示モードだけで動く', () => {
+    app = loadApp()
+    let wrap = app.doc.querySelector('#slide-months .plan-wrap')
+    app.win.planAutoScrollTick()
+    expect(wrap._wait).toBeUndefined()
+    app.close()
+    app = loadApp({ search: '?kiosk=1' })
+    wrap = app.doc.querySelector('#slide-months .plan-wrap')
+    app.win.planAutoScrollTick()
+    expect(wrap._wait).toBe(16)
+  })
+})
