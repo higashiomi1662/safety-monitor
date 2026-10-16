@@ -1450,6 +1450,104 @@ body.mode-kiosk #slide-policy{display:block; overflow-y:auto; text-align:center;
 }
 
 </style>
+<style id="ui-pages">
+/* ===================================================================
+   ページ別のレスポンシブ対応（Step 7）
+   掲示モード（body.mode-kiosk）の見た目は変えない。通常表示の調整は body.mode-app 配下に書く。
+   スマホ 〜599px / タブレット 600〜1023px / PC 1024px〜
+   =================================================================== */
+/* 表示モードで出し分ける部品 */
+body.mode-kiosk .app-only{ display:none !important; }
+body.mode-app .kiosk-only{ display:none !important; }
+
+/* ---------- 保有資格（資格 × 氏名の表）：両モード共通。色は旧インライン指定と同じ ---------- */
+.qual-legend{ display:flex; gap:20px; margin-bottom:8px; flex-shrink:0; align-items:center; flex-wrap:wrap; }
+.qual-legend-item{ display:flex; align-items:center; gap:6px; font-size:15px; color:var(--sub); }
+.qual-legend .qt-swatch{ display:inline-block; width:26px; height:20px; line-height:20px; text-align:center; border:1px solid #8497B0; font-size:inherit; }
+.qual-legend .qt-swatch.qt-plan{ width:auto; min-width:34px; font-size:12px; }
+#qual-table-wrap{
+  flex:1; overflow-x:scroll; overflow-y:auto; min-height:0; border-radius:6px;
+  border:1px solid rgba(0,0,0,.055); -webkit-overflow-scrolling:touch;
+}
+#qual-scroll-hint{ font-size:11px; color:var(--sub); text-align:center; padding:4px 0; letter-spacing:1px; flex-shrink:0; }
+#d-cross-table{
+  --qual-name-w:190px;  /* 資格名の列 */
+  --qual-col-w:54px;    /* 氏名 1 列 */
+  border-collapse:separate; border-spacing:0; font-size:13px; width:100%; min-width:max-content; table-layout:auto; background:#fff;
+}
+.qt-h{
+  background:#1F3864; color:#fff; font-weight:700; border:1px solid #8497B0; padding:4px 2px;
+  text-align:center; vertical-align:middle; font-size:12px; line-height:1.25; word-break:break-all;
+  position:sticky; top:0; z-index:3;
+}
+.qt-h-name{ width:var(--qual-name-w); min-width:var(--qual-name-w); left:0; z-index:5; font-size:14px; letter-spacing:2px; }
+.qt-h-person{ width:var(--qual-col-w); min-width:var(--qual-col-w); height:64px; }
+.qt-row{ height:30px; }
+.qt-name{
+  background:#2E75B6; color:#fff; font-weight:700; border:1px solid #8497B0; padding:4px 10px; text-align:left;
+  font-size:13px; line-height:1.25; width:var(--qual-name-w); min-width:var(--qual-name-w); position:sticky; left:0; z-index:2;
+}
+.qt-exp{ font-size:10px; font-weight:600; color:rgba(255,255,255,.78); margin-top:1px; }
+.qt-exp.is-expired{ color:#FFB3B3; }
+.qt-exp.is-expiring{ color:#FFE699; }
+.qt-cell{ background:#fff; border:1px solid #8497B0; padding:0; text-align:center; vertical-align:middle; }
+.qt-held{ background:#70AD47; color:#fff; font-weight:900; font-size:20px; }
+.qt-held.is-expiring{ background:#E6A100; }
+.qt-held.is-expired{ background:var(--red); }
+.qt-plan{ background:#fff; color:#1F3864; font-weight:700; font-size:11px; }
+.qt-plan.is-near{ background:#FFF2CC; color:#7F6000; }
+.qt-empty{ padding:20px; color:var(--sub); font-size:16px; }
+
+/* 通常表示：状態の色をトークンにそろえ、12px 未満の文字を無くす */
+body.mode-app .qt-held{ background:var(--c-ok); }
+body.mode-app .qt-held.is-expiring{ background:var(--c-warn); }
+body.mode-app .qt-held.is-expired{ background:var(--c-danger); }
+body.mode-app .qt-plan{ background:var(--c-info-bg); color:var(--c-info); font-size:var(--fs-xs); }
+body.mode-app .qt-plan.is-near{ background:var(--c-info-bg); color:var(--c-info); box-shadow:inset 0 0 0 2px var(--c-info); }
+body.mode-app .qt-exp{ font-size:var(--fs-xs); }
+body.mode-app .qual-legend-item{ font-size:var(--fs-sm); color:var(--c-sub); }
+body.mode-app .qual-legend .qt-swatch.qt-plan{ font-size:var(--fs-xs); }
+body.mode-app #qual-table-wrap{ flex:none; max-height:70vh; overflow-x:auto; background:var(--c-surface); border-color:var(--c-line); border-radius:var(--r-md); }
+
+/* スマホ用のカード一覧（人で見る／資格で見る） */
+.qual-mobile{ display:none; }
+.qual-seg{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4px; padding:4px; background:var(--c-line-soft); border-radius:var(--r-md); }
+.qual-seg button{
+  min-height:44px; border:0; border-radius:9px; background:transparent; color:var(--c-sub);
+  font:inherit; font-size:var(--fs-md); font-weight:700; cursor:pointer;
+}
+.qual-seg button[aria-selected="true"]{ background:var(--c-surface); color:var(--c-ink); box-shadow:0 1px 2px rgba(22,32,42,.15); }
+.qual-search{
+  display:flex; align-items:center; gap:var(--sp-2); min-height:52px; padding:0 14px;
+  background:var(--c-surface); border:1px solid var(--c-field-line); border-radius:var(--r-md);
+}
+.qual-search svg{ flex-shrink:0; color:var(--c-sub); }
+.qual-search input{ flex:1; min-width:0; min-height:48px; border:0; background:transparent; font:inherit; font-size:var(--fs-md); color:var(--c-ink); outline:none; }
+.qual-search-label{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+.qual-filters{ display:flex; flex-wrap:wrap; gap:var(--sp-2); }
+.qual-filter{
+  min-height:var(--tap); padding:0 16px; border:1px solid var(--c-field-line); border-radius:var(--r-pill);
+  background:var(--c-surface); color:var(--c-ink); font:inherit; font-size:15px; cursor:pointer;
+}
+.qual-filter[aria-pressed="true"]{ background:var(--c-ink); border:2px solid var(--c-ink); color:#fff; font-weight:700; }
+.qual-cards{ display:flex; flex-direction:column; gap:var(--sp-3); }
+.qual-card{
+  background:var(--c-surface); border:1px solid var(--c-line); border-radius:var(--r-lg); padding:var(--sp-4);
+  display:flex; flex-direction:column; gap:var(--sp-3);
+}
+.qual-card-head{ display:flex; align-items:baseline; justify-content:space-between; gap:var(--sp-2); flex-wrap:wrap; }
+.qual-card-name{ margin:0; font-size:19px; font-weight:700; color:var(--c-ink); }
+.qual-card-sub{ font-size:var(--fs-sm); color:var(--c-sub); }
+.qual-card-list{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:var(--sp-2); }
+.qual-card-list li{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); font-size:15px; color:var(--c-ink); }
+@media (max-width:599px){
+  body.mode-app .qual-mobile{ display:flex; flex-direction:column; gap:14px; }
+  body.mode-app #slide-qual .qual-legend, body.mode-app #qual-table-wrap{ display:none; }
+}
+@media (min-width:600px) and (max-width:1023px){
+  body.mode-app #d-cross-table{ --qual-name-w:170px; --qual-col-w:50px; }
+}
+</style>
 <style id="app-ui">
 /* ===================================================================
    安全衛生モニター UI（v178〜）
@@ -2371,16 +2469,30 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
           <section class="slide" id="slide-qual">
             <div class="sl-label">Qualification / Schedule List</div>
             <h2 class="sl-h1">保有資格 ／ <span>資格予定 一覧表</span></h2>
-            <div style="display:flex;gap:20px;margin-bottom:8px;flex-shrink:0;align-items:center">
-              <div style="display:flex;align-items:center;gap:6px;font-size:15px;color:var(--sub)"><span style="display:inline-block;width:26px;height:20px;line-height:20px;text-align:center;background:#70AD47;color:#fff;font-weight:900;border:1px solid #8497B0">●</span> <span id="qual-lbl-got">資格保有</span></div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:15px;color:var(--sub)"><span style="display:inline-block;min-width:34px;height:20px;line-height:20px;text-align:center;background:#fff;color:#1F3864;font-weight:700;font-size:12px;border:1px solid #8497B0">10月</span> <span id="qual-lbl-plan">取得予定月</span></div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:15px;color:var(--sub)"><span style="display:inline-block;width:26px;height:20px;line-height:20px;text-align:center;background:#E6A100;color:#fff;font-weight:900;border:1px solid #8497B0">●</span> <span id="qual-lbl-none">更新期限間近／期限切れ</span></div>
+            <div class="qual-legend">
+              <div class="qual-legend-item"><span class="qt-swatch qt-held is-ok">●</span> <span id="qual-lbl-got">資格保有</span></div>
+              <div class="qual-legend-item"><span class="qt-swatch qt-plan">10月</span> <span id="qual-lbl-plan">取得予定月</span></div>
+              <div class="qual-legend-item"><span class="qt-swatch qt-held is-expiring">●</span> <span id="qual-lbl-none">更新期限間近／期限切れ</span></div>
             </div>
-            <div id="qual-table-wrap" style="flex:1;overflow-x:scroll;overflow-y:auto;min-height:0;border-radius:6px;border:1px solid rgba(0,0,0,.055);-webkit-overflow-scrolling:touch;">
-              <table id="d-cross-table" style="border-collapse:separate;border-spacing:0;font-size:13px;width:100%;min-width:max-content;table-layout:auto;background:#fff;"></table>
+            <!-- スマホ（〜599px）：人で見る／資格で見る のカード一覧 -->
+            <div class="qual-mobile app-only" id="qual-mobile">
+              <div class="qual-seg" role="tablist" aria-label="表示の切り替え">
+                <button type="button" role="tab" id="qual-mode-person" aria-selected="true" onclick="setQualMode('person')">人で見る</button>
+                <button type="button" role="tab" id="qual-mode-qual" aria-selected="false" onclick="setQualMode('qual')">資格で見る</button>
+              </div>
+              <label class="qual-search">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+                <span class="qual-search-label">名前で探す</span>
+                <input type="search" id="qual-search" placeholder="名前で探す" autocomplete="off" oninput="setQualSearch(this.value)">
+              </label>
+              <div class="qual-filters" id="qual-filters" role="group" aria-label="絞り込み"></div>
+              <div class="qual-cards" id="qual-cards"></div>
+            </div>
+            <div id="qual-table-wrap">
+              <table id="d-cross-table"></table>
             </div>
             <!-- 横スクロールヒント -->
-            <div id="qual-scroll-hint" style="font-size:11px;color:var(--sub);text-align:center;padding:4px 0;letter-spacing:1px;flex-shrink:0;">
+            <div id="qual-scroll-hint">
               ← 左右にスクロールできます →
             </div>
           </section>
@@ -4827,84 +4939,8 @@ function renderDisplay() {
     selectAccCase(0);
   }
 
-  // ── 資格 × 氏名 クロス一覧表 ────────────────────────────
-  (()=>{
-    const reporters = D.reporters || [];
-    const quals     = D.qualifications || [];
-    const scheds    = D.schedules || [];
-    const tbl       = document.getElementById('d-cross-table');
-    if(!tbl) return;
-
-    if(!reporters.length || !quals.length) {
-      tbl.innerHTML = '<tr><td style="padding:20px;color:var(--sub);font-size:16px">管理画面で従業員リストと資格を登録してください</td></tr>';
-      return;
-    }
-
-    // 名前の正規化（スペース除去・先頭2文字で照合）
-    const norm = s => s.replace(/\s/g,'');
-    const match = (name, listStr) => {
-      if (!listStr || !name) return false;
-      const normName = norm(name);
-      return listStr.split(',').some(n => norm(n.trim()) === normName);
-    };
-
-    // schedules から資格名→{names, date}マップを作成
-    const schedMap = {};
-    scheds.forEach(s => {
-      const key = s.qual;
-      if(!schedMap[key]) schedMap[key] = [];
-      schedMap[key].push({names: s.names||s.person||'', date: s.date||'', status: s.status||'planned'});
-    });
-
-    // 表示する資格行：qualificationsすべて + schedulesにのみある資格を追加
-    const allQualNames = [...quals.map(q=>q.name)];
-    scheds.forEach(s=>{ if(!allQualNames.includes(s.qual)) allQualNames.push(s.qual); });
-
-    // ─── 資格保有一覧表：行=資格名、列=氏名（Excel様式） ───
-    const NAVY='#1F3864', BLUE='#2E75B6', GREEN='#70AD47';
-    const NAME_W = 190;   // 資格名列(px)
-    const COL_W  = 54;    // 氏名1列(px)
-    const bd = '1px solid #8497B0';
-
-    const hdrCell = (txt, extra) => `<th style="background:${NAVY};color:#fff;font-weight:700;border:${bd};padding:4px 2px;text-align:center;vertical-align:middle;font-size:12px;line-height:1.25;word-break:break-all;position:sticky;top:0;z-index:3;${extra||''}">${txt}</th>`;
-
-    let html = '<tr>'
-      + hdrCell('資　格　名', `width:${NAME_W}px;min-width:${NAME_W}px;left:0;z-index:5;font-size:14px;letter-spacing:2px;`)
-      + reporters.map(r => hdrCell(String(r).replace(/\s+/g,'<wbr>'), `width:${COL_W}px;min-width:${COL_W}px;height:64px;`)).join('')
-      + '</tr>';
-
-    allQualNames.forEach(qname => {
-      const qData   = quals.find(q => q.name === qname);
-      const qStatus = qData ? qData.status : 'ok';
-      const expiry  = qData ? (qData.status==='no_renewal' ? '' : (qData.expiry||'')) : '';
-      const expColor = qStatus==='expired' ? '#FFB3B3' : qStatus==='expiring' ? '#FFE699' : 'rgba(255,255,255,.78)';
-      const nameCell = `<td style="background:${BLUE};color:#fff;font-weight:700;border:${bd};padding:4px 10px;text-align:left;font-size:13px;line-height:1.25;width:${NAME_W}px;min-width:${NAME_W}px;position:sticky;left:0;z-index:2;" title="${qname}${expiry?' ('+expiry+')':''}">
-          ${qname}${expiry ? `<div style="font-size:10px;font-weight:600;color:${expColor};margin-top:1px;">${expiry}</div>` : ''}
-        </td>`;
-
-      const cells = reporters.map(r => {
-        // ● 取得済
-        if (qData && match(r, qData.holderNames||'')) {
-          const fill = qStatus==='expired' ? 'var(--red)' : qStatus==='expiring' ? '#E6A100' : GREEN;
-          return `<td style="background:${fill};color:#fff;font-weight:900;font-size:20px;text-align:center;vertical-align:middle;border:${bd};padding:0;">●</td>`;
-        }
-        // 取得予定（月表示）
-        const plans = (schedMap[qname]||[]).filter(p => match(r, p.names));
-        if (plans.length) {
-          const p0 = plans[0];
-          const m  = p0.date ? parseInt(String(p0.date).replace(/\//g,'-').split('-')[1],10) : 0;
-          const isNear = p0.date && p0.date.replace(/\//g,'-') <= localDateStr(new Date(Date.now()+30*24*60*60*1000));
-          const mark = p0.status==='ongoing' ? '▷' : '';
-          return `<td title="${p0.date||''}" style="background:${isNear?'#FFF2CC':'#fff'};color:${isNear?'#7F6000':'#1F3864'};font-weight:700;font-size:11px;text-align:center;vertical-align:middle;border:${bd};padding:0;">${mark}${m?m+'月':'予定'}</td>`;
-        }
-        return `<td style="background:#fff;border:${bd};padding:0;"></td>`;
-      }).join('');
-
-      html += `<tr style="height:30px;">${nameCell}${cells}</tr>`;
-    });
-
-    tbl.innerHTML = html;
-  })();
+  // ── 資格 × 氏名 クロス一覧表（表とスマホ用カード）──────────
+  renderQualSlide();
 
   // ── 事故事例・再発防止 ─────────────────────────────────
   const cases = D.accidentCases || [];
@@ -4984,6 +5020,177 @@ function renderDisplay() {
   // AI left panel ── 設備点検状況（異常のみ先表示、最大6件）
   // AI insp-list 削除済み
   document.dispatchEvent(new CustomEvent('display-rendered'));
+}
+
+// ===================== 保有資格（資格 × 氏名）=====================
+// 名前の照合（空白の有無は区別しない）
+function qualNameMatch(name, listStr) {
+  if (!listStr || !name) return false;
+  const norm = s => String(s).replace(/\s/g, '');
+  const n = norm(name);
+  return String(listStr).split(',').some(x => norm(x.trim()) === n);
+}
+// 「2026/11/30」→「11/30」
+function qualShortDate(v) {
+  const m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(String(v || ''));
+  return m ? Number(m[2]) + '/' + Number(m[3]) : String(v || '');
+}
+// 資格 × 人 の表データを作る（行＝資格、列＝人）
+// cells: { kind:'held'|'planned'|'none', tone, label, ... }
+function buildQualMatrix(data, today = localDateStr()) {
+  const people = (data.reporters || []).map(String);
+  const quals  = data.qualifications || [];
+  const scheds = data.schedules || [];
+  const schedMap = {};
+  scheds.forEach(s => {
+    (schedMap[s.qual] = schedMap[s.qual] || []).push({ names: s.names || s.person || '', date: s.date || '', status: s.status || 'planned' });
+  });
+  // 従業員か資格が未登録なら表は作らない
+  const names = people.length && quals.length ? quals.map(q => q.name) : [];
+  if (names.length) scheds.forEach(s => { if (!names.includes(s.qual)) names.push(s.qual); });
+
+  const rows = names.map(qname => {
+    const q = quals.find(x => x.name === qname);
+    const status = q ? (q.status || 'ok') : 'none';
+    const expiry = q && status !== 'no_renewal' ? (q.expiry || '') : '';
+    const heldTone = status === 'expired' ? 'danger' : status === 'expiring' ? 'warn' : 'ok';
+    const heldLabel = status === 'expired' ? '期限切れ' : status === 'expiring' ? '期限 ' + qualShortDate(expiry) : '保有';
+    const cells = people.map(name => {
+      if (q && qualNameMatch(name, q.holderNames || '')) return { kind: 'held', status, tone: heldTone, label: heldLabel };
+      const p0 = (schedMap[qname] || []).find(p => qualNameMatch(name, p.names));
+      if (!p0) return { kind: 'none' };
+      const date = String(p0.date || '').replace(/\//g, '-');
+      const month = date ? parseInt(date.split('-')[1], 10) || 0 : 0;
+      const near = !!date && daysBetween(today, date) <= 30;
+      const ongoing = p0.status === 'ongoing';
+      const label = (month ? month + '月 ' : '') + (ongoing ? '受講中' : '受講予定');
+      return { kind: 'planned', tone: 'info', label, month, date: p0.date || '', near, ongoing };
+    });
+    return { name: qname, status, expiry, cells };
+  });
+
+  const byPerson = people.map((name, ci) => {
+    const items = rows.filter(r => r.cells[ci].kind !== 'none').map(r => ({ qual: r.name, ...r.cells[ci] }));
+    return {
+      name, items,
+      alert: items.some(x => x.kind === 'held' && (x.tone === 'warn' || x.tone === 'danger')),
+      planned: items.some(x => x.kind === 'planned'),
+    };
+  });
+  const byQual = rows.map(r => {
+    const holders = [], planned = [];
+    r.cells.forEach((c, ci) => {
+      if (c.kind === 'held') holders.push({ name: people[ci], ...c });
+      else if (c.kind === 'planned') planned.push({ name: people[ci], ...c });
+    });
+    return { name: r.name, status: r.status, expiry: r.expiry, holders, planned, alert: r.status === 'expired' || r.status === 'expiring' };
+  });
+  return {
+    people, rows, byPerson: rows.length ? byPerson : [], byQual,
+    counts: {
+      people: people.length,
+      alert: byPerson.filter(p => p.alert).length,
+      planned: byPerson.filter(p => p.planned).length,
+      quals: rows.length,
+      qualAlert: byQual.filter(q => q.alert).length,
+      qualPlanned: byQual.filter(q => q.planned.length).length,
+    },
+  };
+}
+
+// スマホ用カードの表示状態（mode: person / qual, filter: all / alert / planned）
+var qualUi = { mode: 'person', q: '', filter: 'all' };
+var qualMatrixCache = null;
+
+// 保有資格ページ：表（タブレット以上）とカード（スマホ）を同じデータから描画する
+function renderQualSlide() {
+  const tbl = document.getElementById('d-cross-table');
+  if (!tbl) return;
+  const m = buildQualMatrix(D);
+  qualMatrixCache = m;
+  if (!m.rows.length) {
+    tbl.innerHTML = '<tr><td class="qt-empty">管理画面で従業員リストと資格を登録してください</td></tr>';
+    renderQualCards();
+    return;
+  }
+  let html = '<tr><th class="qt-h qt-h-name">資　格　名</th>'
+    + m.people.map(n => '<th class="qt-h qt-h-person">' + planEsc(n).replace(/\s+/g, '<wbr>') + '</th>').join('')
+    + '</tr>';
+  m.rows.forEach(r => {
+    const title = r.name + (r.expiry ? ' (' + r.expiry + ')' : '');
+    html += '<tr class="qt-row"><td class="qt-name" title="' + planEsc(title) + '">' + planEsc(r.name)
+      + (r.expiry ? '<div class="qt-exp is-' + planEsc(r.status) + '">' + planEsc(r.expiry) + '</div>' : '')
+      + '</td>'
+      + r.cells.map(c => {
+        if (c.kind === 'held') return '<td class="qt-cell qt-held is-' + planEsc(c.status) + '" title="' + planEsc(c.label) + '">●</td>';
+        if (c.kind === 'planned') return '<td class="qt-cell qt-plan' + (c.near ? ' is-near' : '') + '" title="' + planEsc(c.date) + '">'
+          + (c.ongoing ? '▷' : '') + (c.month ? c.month + '月' : '予定') + '</td>';
+        return '<td class="qt-cell"></td>';
+      }).join('')
+      + '</tr>';
+  });
+  tbl.innerHTML = html;
+  renderQualCards();
+}
+
+// スマホ用カード（人で見る／資格で見る）＋名前検索＋絞り込み
+function renderQualCards() {
+  const host = document.getElementById('qual-cards');
+  if (!host) return;
+  const m = qualMatrixCache || buildQualMatrix(D);
+  const byQual = qualUi.mode === 'qual';
+  const c = m.counts;
+  const filters = byQual
+    ? [['all', 'すべて ' + c.quals + '件'], ['alert', '期限間近 ' + c.qualAlert], ['planned', '受講予定 ' + c.qualPlanned]]
+    : [['all', 'すべて ' + c.people + '人'], ['alert', '期限間近 ' + c.alert], ['planned', '受講予定 ' + c.planned]];
+  const fEl = document.getElementById('qual-filters');
+  if (fEl) fEl.innerHTML = filters.map(([k, label]) =>
+    '<button type="button" class="qual-filter" aria-pressed="' + (qualUi.filter === k) + '" onclick="setQualFilter(\'' + k + '\')">' + planEsc(label) + '</button>').join('');
+  ['person', 'qual'].forEach(k => {
+    const b = document.getElementById('qual-mode-' + k);
+    if (b) b.setAttribute('aria-selected', String(qualUi.mode === k));
+  });
+  const input = document.getElementById('qual-search');
+  if (input) input.placeholder = byQual ? '資格名・名前で探す' : '名前で探す';
+
+  const q = qualUi.q.replace(/\s/g, '').toLowerCase();
+  const hit = s => String(s).replace(/\s/g, '').toLowerCase().includes(q);
+  const row = (name, ch) => '<li><span>' + planEsc(name) + '</span>' + chip(ch.tone, ch.label) + '</li>';
+  let cards;
+  if (byQual) {
+    cards = m.byQual
+      .filter(x => qualUi.filter === 'all' || (qualUi.filter === 'alert' ? x.alert : x.planned.length))
+      .filter(x => !q || hit(x.name) || x.holders.concat(x.planned).some(p => hit(p.name)))
+      .map(x => {
+        const list = x.holders.concat(x.planned);
+        return '<article class="qual-card"><div class="qual-card-head"><h3 class="qual-card-name">' + planEsc(x.name) + '</h3>'
+          + '<span class="qual-card-sub">保有 ' + x.holders.length + '人' + (x.planned.length ? '・予定 ' + x.planned.length + '人' : '') + '</span></div>'
+          + (list.length ? '<ul class="qual-card-list">' + list.map(p => row(p.name, p)).join('') + '</ul>' : '<p class="empty">保有者はいません</p>')
+          + '</article>';
+      });
+  } else {
+    cards = m.byPerson
+      .filter(p => qualUi.filter === 'all' || (qualUi.filter === 'alert' ? p.alert : p.planned))
+      .filter(p => !q || hit(p.name))
+      .map(p => '<article class="qual-card"><div class="qual-card-head"><h3 class="qual-card-name">' + planEsc(p.name) + '</h3></div>'
+        + (p.items.length ? '<ul class="qual-card-list">' + p.items.map(it => row(it.qual, it)).join('') + '</ul>' : '<p class="empty">登録された資格はありません</p>')
+        + '</article>');
+  }
+  host.innerHTML = cards.length ? cards.join('')
+    : '<p class="empty">' + (m.rows.length ? '該当する人・資格はありません' : '管理画面で従業員リストと資格を登録してください') + '</p>';
+}
+function setQualMode(mode) {
+  qualUi.mode = mode === 'qual' ? 'qual' : 'person';
+  qualUi.filter = 'all';
+  renderQualCards();
+}
+function setQualFilter(f) {
+  qualUi.filter = ['alert', 'planned'].includes(f) ? f : 'all';
+  renderQualCards();
+}
+function setQualSearch(v) {
+  qualUi.q = String(v || '');
+  renderQualCards();
 }
 
 // ===================== AI ADVICE =====================
