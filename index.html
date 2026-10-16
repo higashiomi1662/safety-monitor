@@ -7129,8 +7129,8 @@ function renderAdmin() {
     <div class="adm-row" style="border:1px solid rgba(0,0,0,.055);border-radius:6px;padding:14px;margin-bottom:10px">
       <div class="adm-field" style="min-width:80px;max-width:100px"><label>数値</label><input type="text" id="g-num-${i}" value="${planEsc(g.num)}"></div>
       <div class="adm-field" style="min-width:60px;max-width:80px"><label>単位</label><input type="text" id="g-unit-${i}" value="${planEsc(g.unit)}"></div>
-      <div class="adm-field"><label>タイトル</label><input type="text" id="g-title-${i}" value="${planEsc(g.title)}"></div>
-      <div class="adm-field" style="flex:2"><label>説明文</label><textarea id="g-desc-${i}" rows="2">${planEsc(g.desc)}</textarea></div>
+      <div class="adm-field"><label>タイトル</label><input type="text" id="g-title-${i}" value="${planEsc(g.titleKey?T(g.titleKey):g.title)}"></div>
+      <div class="adm-field" style="flex:2"><label>説明文</label><textarea id="g-desc-${i}" rows="2">${planEsc(g.descKey?T(g.descKey):g.desc)}</textarea></div>
     </div>`).join('');
 
   const calMonthAdm = idx => ((idx + 3) % 12) + 1;
@@ -7869,12 +7869,18 @@ function saveAll() {
   D.reporters=(document.getElementById('a-reporters')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
   D.departments=(document.getElementById('a-departments')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
 
-  D.goals=D.goals.map((_,i)=>({
-    num:document.getElementById(`g-num-${i}`).value,
-    unit:document.getElementById(`g-unit-${i}`).value,
-    title:document.getElementById(`g-title-${i}`).value,
-    desc:document.getElementById(`g-desc-${i}`).value
-  }));
+  D.goals=D.goals.map((g,i)=>{
+    const o={
+      num:document.getElementById(`g-num-${i}`).value,
+      unit:document.getElementById(`g-unit-${i}`).value,
+      title:document.getElementById(`g-title-${i}`).value,
+      desc:document.getElementById(`g-desc-${i}`).value
+    };
+    // 翻訳キーの文のまま変えていなければキーを残す（日本語・ベトナム語の切り替えを保つ）
+    if(g.titleKey && o.title===T(g.titleKey)) o.titleKey=g.titleKey;
+    if(g.descKey && o.desc===T(g.descKey)) o.descKey=g.descKey;
+    return o;
+  });
   D.months=D.months.map((_,i)=>({act:document.getElementById(`m-act-${i}`).value}));
   collectPolicyAdm();
   collectPlanAdm();

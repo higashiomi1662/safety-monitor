@@ -366,3 +366,22 @@ describe('入力欄の並び', () => {
   })
 })
 
+describe('年間目標の管理画面', () => {
+  it('初期データ（titleKey/descKey）でも undefined と出ず、翻訳文を表示する', () => {
+    app = loadApp()
+    const { win, doc } = app
+    win.openAdmin()
+    expect(doc.getElementById('g-title-0').value).toBe(win.T('goal1title'))
+    expect(doc.getElementById('g-desc-0').value).toBe(win.T('goal1desc'))
+    expect(doc.getElementById('goals-adm-list').innerHTML).not.toContain('undefined')
+  })
+
+  it('変更せずに保存したときは翻訳キーを残す', () => {
+    app = loadApp()
+    const { win } = app
+    win.openAdmin()
+    win.saveAll()
+    expect(win.D.goals[0].titleKey).toBe('goal1title')
+    expect(win.D.goals[0].title).toBe(win.T('goal1title'))
+  })
+})
