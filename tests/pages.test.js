@@ -258,3 +258,57 @@ describe('年間安全衛生計画ページ', () => {
     expect(wrap._wait).toBe(16)
   })
 })
+
+// ===================== ヒヤリハット分析 =====================
+describe('ヒヤリハット分析ページ', () => {
+  const reports = [
+    { id: 'a', loc: '第一工場', type: '挟まれ', dept: '製造部' },
+    { id: 'b', loc: '第二倉庫', type: '転倒', dept: '製造部' },
+    { id: 'c', loc: '事務所', type: '挟まれ', dept: '品質管理室' },
+  ]
+  const bars = (doc, id) =>
+    [...doc.querySelectorAll(`#${id} .hbar`)].map((b) => [
+      b.querySelector('.hbar-label').textContent,
+      Number(b.querySelector('.hbar-val').textContent),
+      b.querySelector('.hbar-fill').style.width,
+    ])
+
+  it('報告3件から HTML の横棒グラフを作る（棒の数と値が一致）', () => {
+    app = loadApp({ localStorage: { nm_reports: JSON.stringify(reports) } })
+    const { win, doc } = app
+    win.renderNMAnalysis()
+    expect(doc.querySelectorAll('#slide-nm-analysis canvas').length).toBe(0)
+    const loc = bars(doc, 'chart-loc')
+    expect(loc.length).toBe(3)
+    expect(loc.map((x) => x[1])).toEqual([1, 1, 1])
+    expect(loc.map((x) => x[0]).sort()).toEqual(['事務所', '第一工場', '第二倉庫'])
+    expect(loc.every((x) => x[2] === '100%')).toBe(true)
+    expect(bars(doc, 'chart-type')).toEqual([
+      ['挟まれ', 2, '100%'],
+      ['転倒', 1, '50%'],
+    ])
+    expect(bars(doc, 'chart-dept')).toEqual([
+      ['製造部', 2, '100%'],
+      ['品質管理室', 1, '50%'],
+    ])
+    expect(doc.getElementById('nm-nodata-loc').hidden).toBe(true)
+    expect(doc.getElementById('chart-loc').hidden).toBe(false)
+    expect(doc.getElementById('d-nm-actual').textContent).toBe('3')
+  })
+
+  it('報告が無いときは「報告データなし」を出し、棒は出さない', () => {
+    app = loadApp()
+    const { win, doc } = app
+    win.renderNMAnalysis()
+    expect(doc.getElementById('nm-nodata-type').hidden).toBe(false)
+    expect(doc.getElementById('chart-type').hidden).toBe(true)
+    expect(doc.querySelectorAll('#chart-type .hbar').length).toBe(0)
+  })
+
+  it('使っていない描画関数と未定義の関数参照が残っていない', () => {
+    app = loadApp()
+    expect(app.win.drawStackedBar).toBeUndefined()
+    const html = app.doc.documentElement.outerHTML
+    expect(html).not.toMatch(/showNoData\(/)
+  })
+})

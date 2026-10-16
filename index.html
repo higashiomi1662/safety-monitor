@@ -1606,6 +1606,23 @@ body.mode-app #slides .plan-table td.pl-note{ font-size:var(--fs-xs); color:var(
 @media (min-width:600px){
   .plan-details > summary{ display:none; }
 }
+
+/* ---------- ヒヤリハット分析：HTML の横棒グラフ（両モード共通。canvas の置き換え） ---------- */
+.hbar-list{ display:flex; flex-direction:column; gap:8px; min-width:0; }
+.hbar{ display:grid; grid-template-columns:minmax(0, 38%) minmax(0, 1fr) auto; align-items:center; gap:8px; min-height:28px; }
+.hbar-label{ font-size:14px; line-height:1.3; color:#33404D; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hbar-track{ height:16px; background:rgba(16,24,40,.07); border-radius:4px; overflow:hidden; }
+.hbar-fill{ display:block; height:100%; min-width:2px; background:var(--c-info); border-radius:4px; }
+.hbar-val{ min-width:2ch; font-size:15px; font-weight:700; text-align:right; font-variant-numeric:tabular-nums; color:#16202A; }
+body.mode-kiosk .nm-chart-wrap > .hbar-list{ position:absolute; inset:0; overflow-y:auto; justify-content:center; }
+body.mode-kiosk .hbar{ min-height:32px; }
+body.mode-kiosk .hbar-label{ font-size:15px; }
+body.mode-kiosk .hbar-track{ height:20px; }
+body.mode-app #slides .nm-chart-wrap{ min-height:0; }
+body.mode-app #slides .nm-no-data{ min-height:96px; font-size:var(--fs-md); letter-spacing:0; }
+body.mode-app #slides .nm-chart-card{ border-radius:var(--r-lg); }
+body.mode-app #slides .nm-chart-title{ letter-spacing:0; }
+body.mode-app #slides .nm-sync-lbl{ font-size:var(--fs-sm); }
 </style>
 <style id="app-ui">
 /* ===================================================================
@@ -2486,21 +2503,21 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
                 <div class="nm-chart-title"><strong id="nm-lbl-loc">📍 発生場所別</strong></div>
                 <div class="nm-chart-wrap">
                   <div class="nm-no-data" id="nm-nodata-loc">報告データなし</div>
-                  <canvas id="chart-loc" style="display:none"></canvas>
+                  <div class="hbar-list" id="chart-loc" role="list" hidden></div>
                 </div>
               </div>
               <div class="nm-chart-card">
                 <div class="nm-chart-title"><strong id="nm-lbl-type">⚠ 危険の種類別</strong></div>
                 <div class="nm-chart-wrap">
                   <div class="nm-no-data" id="nm-nodata-type">報告データなし</div>
-                  <canvas id="chart-type" style="display:none"></canvas>
+                  <div class="hbar-list" id="chart-type" role="list" hidden></div>
                 </div>
               </div>
               <div class="nm-chart-card">
                 <div class="nm-chart-title"><strong id="nm-lbl-dept">🏢 報告部門別</strong></div>
                 <div class="nm-chart-wrap">
                   <div class="nm-no-data" id="nm-nodata-dept">報告データなし</div>
-                  <canvas id="chart-dept" style="display:none"></canvas>
+                  <div class="hbar-list" id="chart-dept" role="list" hidden></div>
                 </div>
               </div>
             </div>
@@ -7786,12 +7803,6 @@ document.getElementById('nm-modal').addEventListener('click',e=>{
 });
 
 // ===================== NM ANALYSIS CHARTS =====================
-const DEPT_COLORS = [
-  '#2563EB','#B45309','#047857','#DC2626','#6D28D9',
-  '#BE185D','#0E7490','#4D7C0F','#C2410C','#6B7280'
-];
-
-let chartInstances = {}; // store canvas refs
 
 function renderNMAnalysis() {
   const reports = getNMReports();
@@ -7810,9 +7821,11 @@ function renderNMAnalysis() {
     +(syncOk?'一致しています':(actualCount>manualCount?'報告が多い':'入力が多い'))
     +'</div>';
 
-  const showND = (canvasId, nodataId) => {
-    document.getElementById(nodataId).style.display='flex';
-    document.getElementById(canvasId).style.display='none';
+  const showND = (listId, nodataId) => {
+    document.getElementById(nodataId).hidden = false;
+    const list = document.getElementById(listId);
+    list.hidden = true;
+    list.innerHTML = '';
   };
 
   if(!reports.length) {
@@ -7829,7 +7842,7 @@ function renderNMAnalysis() {
     locMap[v] = (locMap[v]||0)+1;
   });
   const locLabels = Object.keys(locMap).sort((a,b)=>locMap[b]-locMap[a]);
-  drawHBar('chart-loc','nm-nodata-loc', locLabels, locLabels.map(k=>locMap[k]), DEPT_COLORS);
+  drawHBar('chart-loc','nm-nodata-loc', locLabels, locLabels.map(k=>locMap[k]));
 
   // ── 危険の種類別 ───────────────────────────────────
   const typeMap = {};
@@ -7838,7 +7851,7 @@ function renderNMAnalysis() {
     typeMap[v] = (typeMap[v]||0)+1;
   });
   const typeLabels = Object.keys(typeMap).sort((a,b)=>typeMap[b]-typeMap[a]);
-  drawHBar('chart-type','nm-nodata-type', typeLabels, typeLabels.map(k=>typeMap[k]), DEPT_COLORS);
+  drawHBar('chart-type','nm-nodata-type', typeLabels, typeLabels.map(k=>typeMap[k]));
 
   // ── 報告部門別 ─────────────────────────────────────
   const deptMap = {};
@@ -7847,145 +7860,24 @@ function renderNMAnalysis() {
     deptMap[v] = (deptMap[v]||0)+1;
   });
   const deptLabels = Object.keys(deptMap).sort((a,b)=>deptMap[b]-deptMap[a]);
-  drawHBar('chart-dept','nm-nodata-dept', deptLabels, deptLabels.map(k=>deptMap[k]), DEPT_COLORS);
+  drawHBar('chart-dept','nm-nodata-dept', deptLabels, deptLabels.map(k=>deptMap[k]));
 }
 
-function drawHBar(canvasId, nodataId, labels, values, colors) {
-  if(!labels.length){ showNoData(canvasId.includes('dept')?'dept':'monthly'); return; }
+// 横棒グラフ（HTML/CSS）。幅は最大値に対する % で指定するので、高DPI・画面幅の変化でも崩れない
+function drawHBar(listId, nodataId, labels, values) {
   const nodata = document.getElementById(nodataId);
-  const canvas = document.getElementById(canvasId);
-  nodata.style.display='none'; canvas.style.display='block';
-
-  const wrap = canvas.parentElement;
-  canvas.width  = wrap.clientWidth  || 400;
-  canvas.height = wrap.clientHeight || 200;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  const W = canvas.width, H = canvas.height;
-  const pad = {top:10, right:60, bottom:10, left:Math.min(160, W*0.35)};
+  const list = document.getElementById(listId);
+  if (!nodata || !list) return;
+  if (!labels.length) { nodata.hidden = false; list.hidden = true; list.innerHTML = ''; return; }
+  nodata.hidden = true;
+  list.hidden = false;
   const maxVal = Math.max(...values, 1);
-  const barH = Math.min(28, (H - pad.top - pad.bottom) / labels.length - 6);
-  const totalH = (barH + 6) * labels.length;
-  const startY = pad.top + (H - pad.top - pad.bottom - totalH) / 2;
-
-  labels.forEach((lbl, i) => {
-    const y = startY + i * (barH + 6);
-    const barW = ((values[i] / maxVal) * (W - pad.left - pad.right));
-    const color = colors[i % colors.length];
-
-    // bar background
-    ctx.fillStyle = 'rgba(0,0,0,.04)';
-    ctx.beginPath(); ctx.roundRect(pad.left, y, W - pad.left - pad.right, barH, 3);
-    ctx.fill();
-
-    // bar fill
-    if(barW > 0) {
-      ctx.fillStyle = color;
-      ctx.globalAlpha = 0.85;
-      ctx.beginPath(); ctx.roundRect(pad.left, y, barW, barH, 3);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-
-    // label
-    ctx.fillStyle = 'rgba(0,0,0,.70)';
-    ctx.font = `${Math.max(10,barH*0.45)}px 'Noto Sans JP', sans-serif`;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    const truncLbl = lbl.length > 14 ? lbl.slice(0,13)+'…' : lbl;
-    ctx.fillText(truncLbl, pad.left - 8, y + barH/2);
-
-    // value
-    ctx.fillStyle = '#14181F';
-    ctx.font = `bold ${Math.max(11,barH*0.5)}px sans-serif`;
-    ctx.textAlign = 'left';
-    ctx.fillText(values[i], pad.left + barW + 8, y + barH/2);
-  });
-}
-
-function drawStackedBar(canvasId, nodataId, labels, datasets) {
-  if(!labels.length||!datasets.length){ showNoData('monthly'); return; }
-  const nodata = document.getElementById(nodataId);
-  const canvas = document.getElementById(canvasId);
-  nodata.style.display='none'; canvas.style.display='block';
-
-  const wrap = canvas.parentElement;
-  canvas.width  = wrap.clientWidth  || 500;
-  canvas.height = wrap.clientHeight || 220;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  const W = canvas.width, H = canvas.height;
-  const pad = {top:30, right:20, bottom:36, left:30};
-  const chartW = W - pad.left - pad.right;
-  const chartH = H - pad.top - pad.bottom;
-  const colW   = chartW / labels.length;
-  const barW   = Math.min(colW * 0.65, 40);
-
-  // compute max stack
-  const totals = labels.map((_,i) => datasets.reduce((s,ds) => s + ds.data[i], 0));
-  const maxVal = Math.max(...totals, 1);
-
-  // grid lines
-  ctx.strokeStyle = 'rgba(0,0,0,.055)';
-  ctx.lineWidth = 1;
-  [0.25,0.5,0.75,1].forEach(f => {
-    const y = pad.top + chartH * (1-f);
-    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+chartW, y); ctx.stroke();
-    ctx.fillStyle = 'rgba(0,0,0,.40)';
-    ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(Math.round(maxVal*f), pad.left - 4, y + 3);
-  });
-
-  // stacked bars
-  labels.forEach((lbl, ci) => {
-    const x = pad.left + ci * colW + (colW - barW) / 2;
-    let stackY = pad.top + chartH;
-
-    datasets.forEach(ds => {
-      const val = ds.data[ci];
-      if(!val) return;
-      const bh = (val / maxVal) * chartH;
-      stackY -= bh;
-      ctx.fillStyle = ds.color;
-      ctx.globalAlpha = 0.82;
-      ctx.beginPath(); ctx.roundRect(x, stackY, barW, bh, bh>4?2:0); ctx.fill();
-      ctx.globalAlpha = 1;
-      // value inside bar if tall enough
-      if(bh > 14) {
-        ctx.fillStyle = '#14181F'; ctx.font = `bold 10px sans-serif`; ctx.textAlign='center';
-        ctx.fillText(val, x + barW/2, stackY + bh/2 + 3);
-      }
-    });
-
-    // total on top
-    if(totals[ci] > 0) {
-      ctx.fillStyle = '#14181F'; ctx.globalAlpha = 0.6;
-      ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(totals[ci], x + barW/2, pad.top + chartH - (totals[ci]/maxVal)*chartH - 5);
-      ctx.globalAlpha = 1;
-    }
-
-    // x label
-    ctx.fillStyle = 'rgba(0,0,0,.55)';
-    ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(lbl, pad.left + ci * colW + colW/2, pad.top + chartH + 16);
-  });
-
-  // legend
-  const legY = 10;
-  let legX = pad.left;
-  datasets.forEach(ds => {
-    ctx.fillStyle = ds.color;
-    ctx.fillRect(legX, legY, 10, 10);
-    ctx.fillStyle = 'rgba(0,0,0,.60)';
-    ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
-    const lbl = ds.label.length > 8 ? ds.label.slice(0,7)+'…' : ds.label;
-    ctx.fillText(lbl, legX + 13, legY + 8);
-    legX += ctx.measureText(lbl).width + 28;
-    if(legX > W - 60) legX = pad.left; // wrap
-  });
+  list.innerHTML = labels.map((lbl, i) =>
+    '<div class="hbar" role="listitem">'
+    + '<span class="hbar-label" title="' + planEsc(lbl) + '">' + planEsc(lbl) + '</span>'
+    + '<span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:' + Math.round(values[i] / maxVal * 100) + '%"></span></span>'
+    + '<span class="hbar-val">' + values[i] + '</span>'
+    + '</div>').join('');
 }
 
 
