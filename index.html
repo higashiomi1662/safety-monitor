@@ -2187,6 +2187,14 @@ body.sheet-open{ overflow:hidden; }
   .sheet .sheet-grid-3{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
   .sheet .nm-row{ grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); }
 }
+
+/* 統合時の調整：旧 .insp-cp-row の align-items:center を打ち消してボタンを横いっぱいにする */
+#insp-modal .insp-cp-row{ align-items:stretch; }
+/* 危険の種類は大きなボタンで選ぶ。select はデータ保持のために残し、画面からは隠す */
+#nm-modal .nm-type-native{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; padding:0; }
+/* 開いたときに見出しへ移すフォーカスは枠を出さない（キーボード操作の枠は残す） */
+[tabindex="-1"]:focus:not(:focus-visible){ outline:none; }
+h2[tabindex="-1"]:focus{ outline:none; }
 </style>
 </head>
 <body>
