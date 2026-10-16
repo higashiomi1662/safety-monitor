@@ -130,3 +130,17 @@ describe('掲示モードの終了', () => {
     expect(app.win.kioskExitUrl()).toBe('/safety-monitor/#/')
   })
 })
+
+describe('安全巡視の表示のエスケープ', () => {
+  it('指摘内容・報告者に HTML が含まれていてもタグとして解釈しない', () => {
+    app = loadApp()
+    const { win, doc } = app
+    win.eval('D').patrolReports = [{ id: 1, date: '2026-10-16', reporter: '<b>r</b>', area: '<i>a</i>', overall: '',
+      items: [{ category: '整理', item: '<img src=x>', result: 'ng', comment: '<u>c</u>', resolved: false }] }]
+    win.renderPatrolSlide()
+    const slide = doc.getElementById('slide-patrol')
+    expect(slide.querySelector('img[src="x"]')).toBe(null)
+    expect(slide.querySelector('b, u')).toBe(null)
+    expect(slide.textContent).toContain('<img src=x>')
+  })
+})

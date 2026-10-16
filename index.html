@@ -6184,7 +6184,7 @@ function renderDisplay() {
         ${last ? `<div class="ic-last app-only">${planEsc(last)}</div>` : ''}
         ${lBadge}
         ${cps ? `<div class="ic-cps">${cps}</div>` : ''}
-        ${hasAbnormal && p.comment ? `<div class="ic-comment">💬 ${p.comment}</div>` : ''}
+        ${hasAbnormal && p.comment ? `<div class="ic-comment">💬 ${planEsc(p.comment)}</div>` : ''}
         ${hasAbnormal && p.photo ? `<div class="ic-photo-thumb"><img src="${p.photo}" alt="異常写真"></div>` : ''}
         <div class="badge ${p.status} kiosk-only">${sLabel[p.status]||p.status}</div>
         ${st.needDaily ? inspActionBtn('daily') : ''}
@@ -7507,7 +7507,7 @@ function renderMonthlyInsp() {
     }).join('');
 
     const reporterTxt = (doneThisMonth && p.reporter)
-      ? `<div class="mi-reporter kiosk-only">👤 ${p.reporter}${p.dept?' / '+p.dept:''}　📅 ${p.lastInspectedDate}</div>`
+      ? `<div class="mi-reporter kiosk-only">👤 ${planEsc(p.reporter)}${p.dept?' / '+planEsc(p.dept):''}　📅 ${planEsc(p.lastInspectedDate)}</div>`
       : (!doneThisMonth ? `<div class="mi-reporter kiosk-only" style="color:rgba(0,0,0,.16);">今月未実施</div>` : '');
     // 通常表示：状態ラベル・最終点検・未実施なら「点検する」
     const [tone, label] = !doneThisMonth ? ['neutral', '未実施'] : hasNg ? ['danger', '異常あり'] : ['ok', '実施済'];
@@ -7629,15 +7629,15 @@ function renderTrainingSlide() {
       listEl.innerHTML = recent.map(r=>`
         <div class="tr-rec">
           <div class="tr-rec-head">
-            <strong class="tr-rec-title">${r.title||'（タイトルなし）'}</strong>
+            <strong class="tr-rec-title">${planEsc(r.title||'（タイトルなし）')}</strong>
             <span class="tr-rec-date">${r.date||''}</span>
           </div>
           <div class="tr-rec-meta">
             ${r.category?chip('info', r.category):''}
-            <span>講師：${r.instructor||'—'}</span>
+            <span>講師：${planEsc(r.instructor||'—')}</span>
           </div>
           ${(r.attendees||[]).length ? `<div class="tr-rec-attendees">参加者（${(r.attendees||[]).length}名）：${(r.attendees||[]).join('、')}</div>` : ''}
-          ${r.note?`<div class="tr-rec-note">${r.note}</div>`:''}
+          ${r.note?`<div class="tr-rec-note">${planEsc(r.note)}</div>`:''}
         </div>`).join('');
     }
   }
@@ -7761,9 +7761,9 @@ function selectLegalEquip(name) {
         <span class="legal-result-badge ${rs.cls}">${T(rs.key)}</span>
       </div>
       <div class="legal-record-info">
-        👤 実施者：${r.inspector||'—'}
+        👤 実施者：${planEsc(r.inspector||'—')}
         &nbsp;|&nbsp; 次回予定：${r.nextDate||'—'}
-        ${r.note?'<br>📝 '+r.note:''}
+        ${r.note?'<br>📝 '+planEsc(r.note):''}
       </div>
       ${r.pdfData?`<button class="legal-pdf-btn" onclick="openLegalPdf('${r.pdfName||'点検記録.pdf'}',${(D.legalInsp||[]).indexOf(r)})">📄 ${r.pdfName||'PDF閲覧'}</button>`:'<div style="font-size:12px;color:var(--sub);margin-top:5px">※ PDF未添付</div>'}
     </div>`;
@@ -9679,7 +9679,7 @@ function renderDailyList() {
       : isAbn
         ? '<span class="daily-item-badge d-abn kiosk-only">⚠ '+T('abnormal')+'</span>'
         : '<span class="daily-item-badge d-done kiosk-only">✓ '+T('done')+'</span>';
-    const who = p.reporter ? `<span class="daily-item-who kiosk-only">${p.reporter}${p.dept?' / '+p.dept:''}</span>` : '';
+    const who = p.reporter ? `<span class="daily-item-who kiosk-only">${planEsc(p.reporter)}${p.dept?' / '+planEsc(p.dept):''}</span>` : '';
     // 通常表示：状態ラベル・最終点検・未実施なら「点検する」
     const [tone, label] = !inspectedToday ? ['neutral', '未実施'] : isAbn ? ['danger', '異常あり'] : ['ok', '実施済'];
     const hasLast = !!p.lastInspectedDate;
@@ -10118,8 +10118,8 @@ function openPatrolModal() {
       <div class="patrol-cp-section-title">📌 ${cat}</div>
       ${items.map(it => `
         <div class="patrol-cp-item" id="pcp-${it.idx}">
-          <div class="patrol-cp-label">${it.item}</div>
-          <div class="patrol-cp-btns" role="group" aria-label="${it.item}">
+          <div class="patrol-cp-label">${planEsc(it.item)}</div>
+          <div class="patrol-cp-btns" role="group" aria-label="${planEsc(it.item)}">
             <button type="button" class="patrol-cp-btn patrol-cp-btn-ok" aria-pressed="false" onclick="setPatrolCP(${it.idx},'ok')">✓ 良好</button>
             <button type="button" class="patrol-cp-btn patrol-cp-btn-ng" aria-pressed="false" onclick="setPatrolCP(${it.idx},'ng')">✗ 指摘</button>
             <button type="button" class="patrol-cp-btn patrol-cp-btn-na active" aria-pressed="true" onclick="setPatrolCP(${it.idx},'na')">— 対象外</button>
@@ -10230,8 +10230,8 @@ function renderPatrolSlide() {
     const latestRepIdx = reps.length - 1;
     lb.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-size:15px;font-weight:700;color:var(--c-info);">📅 ${latest.date} 実施</div>
-        <div class="patrol-sub">${latest.reporter||''} ${latest.area?'/ '+latest.area:''}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--c-info);">📅 ${planEsc(latest.date)} 実施</div>
+        <div class="patrol-sub">${planEsc(latest.reporter||'')} ${latest.area?'/ '+planEsc(latest.area):''}</div>
       </div>
       ${Object.entries(cats).map(([cat, its]) => `
         <div class="plt-section-title">${cat}</div>
@@ -10244,8 +10244,8 @@ function renderPatrolSlide() {
               // 改善済み：改善内容・写真を表示
               extra = `
                 <div style="margin-top:6px;padding:8px 10px;background:var(--c-ok-bg);border-radius:6px;border:1px solid var(--c-ok-line);">
-                  <div class="patrol-done-title">✅ 改善済 ${it.improvementDate?'('+it.improvementDate+')':''} ${it.improvementReporter?'/ '+it.improvementReporter:''}</div>
-                  ${it.improvementContent?`<div style="font-size:12px;color:rgba(0,0,0,.68);">${it.improvementContent}</div>`:''}
+                  <div class="patrol-done-title">✅ 改善済 ${it.improvementDate?'('+planEsc(it.improvementDate)+')':''} ${it.improvementReporter?'/ '+planEsc(it.improvementReporter):''}</div>
+                  ${it.improvementContent?`<div style="font-size:12px;color:rgba(0,0,0,.68);">${planEsc(it.improvementContent)}</div>`:''}
                   ${it.improvementPhotos?.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">${it.improvementPhotos.map(p=>`<img src="${p}" style="height:55px;border-radius:4px;object-fit:cover;border:1px solid rgba(48,209,88,.3);">`).join('')}</div>`:''}
                 </div>`;
             } else {
@@ -10258,13 +10258,13 @@ function renderPatrolSlide() {
             <div class="plt-chk-item">
               <div class="plt-chk-badge ${it.result}">${it.result==='ok'?'✓':it.result==='ng'?'✗':'—'}</div>
               <div style="flex:1;">
-                <div>${it.item}${it.comment?`<span class="patrol-sub" style="margin-left:6px;">(${it.comment})</span>`:''}</div>
+                <div>${planEsc(it.item)}${it.comment?`<span class="patrol-sub" style="margin-left:6px;">(${planEsc(it.comment)})</span>`:''}</div>
                 ${extra}
               </div>
             </div>`;
         }).join('')}
       `).join('')}
-      ${latest.overall ? `<div class="patrol-sub" style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.055);">📝 ${latest.overall}</div>` : ''}
+      ${latest.overall ? `<div class="patrol-sub" style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.055);">📝 ${planEsc(latest.overall)}</div>` : ''}
       ${latest.photos&&latest.photos.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${latest.photos.map(p=>`<img src="${p}" style="height:60px;border-radius:5px;object-fit:cover;">`).join('')}</div>` : ''}`;
   } else {
     lb.innerHTML = '<div style="color:var(--sub);font-size:13px;">巡視記録がありません</div>';
@@ -10278,11 +10278,11 @@ function renderPatrolSlide() {
     const resolvedCnt = ngItems.filter(it => it.resolved).length;
     return `<div class="patrol-hist-item">
       <div class="patrol-hist-date">📅 ${r.date}</div>
-      <div class="patrol-hist-meta">${r.reporter||''} ${r.area?'/ '+r.area:''}</div>
+      <div class="patrol-hist-meta">${planEsc(r.reporter||'')} ${r.area?'/ '+planEsc(r.area):''}</div>
       <div style="margin-top:4px;">
         ${ngItems.length ? ngItems.map(it => `
           <span class="patrol-issue-tag${it.resolved?' ok':''}" title="${it.resolved?'改善済':'未改善'}">
-            ${it.resolved?'✅ ':'⚠ '}${it.item.length>10?it.item.slice(0,10)+'…':it.item}
+            ${it.resolved?'✅ ':'⚠ '}${planEsc(it.item.length>10?it.item.slice(0,10)+'…':it.item)}
           </span>`).join('') : '<span class="patrol-issue-tag ok">異常なし</span>'}
         ${ngItems.length?`<div class="patrol-sub" style="margin-top:3px;">改善 ${resolvedCnt}/${ngItems.length}件</div>`:''}
       </div>
