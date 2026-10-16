@@ -5689,96 +5689,82 @@ var MONTHLY_CHECKS = {
 };
 
 
-function renderMonthlyCheck() {
-  const now = new Date();
+// 今月の月次活動チェックの状態（チェック項目・保存済みチェック・エビデンス）
+function getMonthlyCheckState(now = new Date()) {
   const mo  = now.getMonth() + 1; // 1-12
-  // 年度月（4月始まり）
-  const fiscalMoIdx = ((mo - 4 + 12) % 12); // 0=4月
-  const fiscalMoLabels = ['4','5','6','7','8','9','10','11','12','1','2','3'];
-  const currentFiscalMo = parseInt(fiscalMoLabels[fiscalMoIdx]);
-
-  // 当月ラベル・テーマ
+  const fiscalMoIdx = ((mo - 4 + 12) % 12); // 年度月（0=4月）
+  const currentFiscalMo = mo;
   const monthCheck = MONTHLY_CHECKS[currentFiscalMo] || { items:[], evidence:[] };
-  const moLabelEl   = document.getElementById('mc-month-label');
-  const themeLabelEl = document.getElementById('mc-theme-label');
-  if (moLabelEl) moLabelEl.textContent = currentFiscalMo + '月';
+  const act = (D.months || [])[fiscalMoIdx]?.act || '—';
 
-  // 月別活動テーマ
-  const monthActs = (D.months || []);
-  const act = monthActs[fiscalMoIdx]?.act || '—';
-  if (themeLabelEl) themeLabelEl.textContent = act.replace(/\n/g, ' / ');
-
-  // 年間訓練計画から今月の計画を取得してチェック項目に追加
-  const annualPlan = D.trainingAnnualPlan || [];
-  const thisMonthPlan = annualPlan[fiscalMoIdx];
-  // 固定チェック項目に訓練計画を動的マージ
-  const dynamicItems = [...(monthCheck.items || [])];
-  const dynamicEvidence = [...(monthCheck.evidence || [])];
+  // 年間訓練計画から今月の計画を取得してチェック項目にマージ
+  const thisMonthPlan = (D.trainingAnnualPlan || [])[fiscalMoIdx];
+  const items = [...(monthCheck.items || [])];
+  const evidence = [...(monthCheck.evidence || [])];
   if (thisMonthPlan?.title) {
     const planItem = `【訓練計画】${thisMonthPlan.title}（対象：${thisMonthPlan.target||'全員'}）の実施・記録入力`;
-    if (!dynamicItems.some(it => it.includes('教育') || it.includes('訓練'))) {
-      dynamicItems.push(planItem);
+    if (!items.some(it => it.includes('教育') || it.includes('訓練'))) {
+      items.push(planItem);
     } else {
       // 教育・訓練項目を計画の内容に置き換え
-      const idx2 = dynamicItems.findIndex(it => it.includes('教育') || it.includes('訓練') || it.includes('安全衛生大会'));
-      if (idx2 >= 0) dynamicItems[idx2] = planItem;
+      const idx2 = items.findIndex(it => it.includes('教育') || it.includes('訓練') || it.includes('安全衛生大会'));
+      if (idx2 >= 0) items[idx2] = planItem;
     }
-    if (!dynamicEvidence.includes('教育訓練記録CSV')) dynamicEvidence.push('教育訓練記録CSV');
+    if (!evidence.includes('教育訓練記録CSV')) evidence.push('教育訓練記録CSV');
   }
-  // 自動チェック状態
   const autoCheck = autoCheckMonth(currentFiscalMo);
-  // 自動チェック：訓練記録が入力済みかも反映
-  const trainingDoneThisMonth = autoCheck.教育訓練入力済;
   const autoMap = {
-    '教育訓練記録CSV':         autoCheck.教育訓練入力済 || trainingDoneThisMonth,
+    '教育訓練記録CSV':         autoCheck.教育訓練入力済,
     '安全巡視記録CSV':         autoCheck.安全巡視入力済,
     '設備点検記録CSV':         autoCheck.設備点検入力済,
     'ヒヤリハット記録CSV':     autoCheck.ヒヤリハット入力済,
     'リスクアセスメントCSV':   autoCheck.RA入力済,
     '全データJSONバックアップ': false, // 手動確認
   };
+  const storeKey = 'mc_check_' + currentFiscalMo + '_' + now.getFullYear();
+  let savedChecks = {};
+  try { savedChecks = JSON.parse(localStorage.getItem(storeKey) || '{}'); }
+  catch (e) { console.warn('[月次確認] 保存済みチェックを読めません', e); }
+  const total = items.length;
+  const done = items.filter((_, i) => savedChecks[i]).length;
+  return { currentFiscalMo, act, items, evidence, autoMap, storeKey, savedChecks,
+           total, done, pct: total ? Math.round(done / total * 100) : 0 };
+}
+
+function renderMonthlyCheck() {
+  const st = getMonthlyCheckState();
+  const moLabelEl   = document.getElementById('mc-month-label');
+  const themeLabelEl = document.getElementById('mc-theme-label');
+  if (moLabelEl) moLabelEl.textContent = st.currentFiscalMo + '月';
+  if (themeLabelEl) themeLabelEl.textContent = st.act.replace(/\n/g, ' / ');
 
   // ─ チェックリスト ─
   const checkEl = document.getElementById('mc-checklist');
   if (checkEl) {
-    // 保存済みチェック状態（localStorage）
-    const storeKey = 'mc_check_' + currentFiscalMo + '_' + now.getFullYear();
     // Firestore から最新チェック状態を取得（非同期）
-    syncMcCheck(storeKey);
-    let savedChecks = {};
-    try { savedChecks = JSON.parse(localStorage.getItem(storeKey)||'{}'); } catch(e){}
-
-    checkEl.innerHTML = dynamicItems.map((item, idx) => {
-      const checked = !!savedChecks[idx];
+    syncMcCheck(st.storeKey);
+    checkEl.innerHTML = st.items.map((item, idx) => {
+      const checked = !!st.savedChecks[idx];
       return `<button type="button" class="mc-item${checked?' is-checked':''}" role="checkbox" aria-checked="${checked}"
-              onclick="toggleMcCheck(${idx}, '${storeKey}', this)">
+              onclick="toggleMcCheck(${idx}, '${st.storeKey}', this)">
         <span class="mc-box" aria-hidden="true">${checked?'✓':''}</span>
         <span class="mc-text">${item}</span>
       </button>`;
     }).join('');
 
-    // 完了率更新
-    const total    = dynamicItems.length;
-    const doneCount = Object.values(savedChecks).filter(Boolean).length;
-    const pct = total ? Math.round(doneCount / total * 100) : 0;
+    // 完了率
     const rateEl = document.getElementById('mc-rate-num');
     const barEl  = document.getElementById('mc-rate-bar');
-    const tone = rateLevel(pct, 100, 50);
-    if (rateEl) {
-      rateEl.textContent = pct + '%';
-      rateEl.style.color = TONE_COLOR[tone];
-    }
-    if (barEl) {
-      barEl.style.width = pct + '%';
-      barEl.style.background = TONE_COLOR[tone];
-    }
+    const tone = rateLevel(st.pct, 100, 50);
+    if (rateEl) { rateEl.textContent = st.pct + '%'; rateEl.style.color = TONE_COLOR[tone]; }
+    if (barEl)  { barEl.style.width = st.pct + '%'; barEl.style.background = TONE_COLOR[tone]; }
   }
 
   // ─ エビデンス保管状況 ─
   const evEl = document.getElementById('mc-evidence-list');
   if (evEl) {
-    evEl.innerHTML = dynamicEvidence.map(ev => {
-      const done = autoMap[ev] ?? false;
+    evEl.innerHTML = st.evidence.map(ev => {
+      const done = st.autoMap[ev] ?? false;
       const isManual = ev === '全データJSONバックアップ';
       return `<div class="mc-ev${done?' is-done':''}">
         <span class="mc-ev-mark" aria-hidden="true">${done?'✓':'—'}</span>
@@ -7889,22 +7875,88 @@ document.getElementById('insp-modal').addEventListener('click',e=>{
 
 
 // ===================== DAILY INSPECTION LIST =====================
-function renderDailyList() {
-  const today = localDateStr();
-  const inspections = D.inspections || [];
-  let done=0, undone=0, abn=0;
-
-  // 始業前点検対象：dailyCheckpoints がある設備のみ
-  const dailyTargets = inspections.filter(p => (p.dailyCheckpoints||[]).length > 0);
-  const rows = dailyTargets.map(p => {
-    // 今日、始業前点検（daily）を実施済みか
+// 今日の始業前点検の実施状況（対象：dailyCheckpoints がある設備）
+function computeDailyStatus(inspections, today = localDateStr()) {
+  const items = (inspections || []).filter(p => (p.dailyCheckpoints||[]).length > 0).map(p => {
     const inspectedToday = p.lastInspectedDate === today
       && (p.lastInspType === 'daily' || p.lastInspType === '' || !p.lastInspType);
-    const isAbn = p.lastDailyCpState && p.lastDailyCpState.some(s => s === 'ng');
-    if(inspectedToday) {
-      done++;
-      if(isAbn) abn++;
-    } else { undone++; }
+    const isAbn = !!(inspectedToday && p.lastDailyCpState && p.lastDailyCpState.some(s => s === 'ng'));
+    return { p, inspectedToday, isAbn };
+  });
+  const done = items.filter(x => x.inspectedToday).length;
+  const abn  = items.filter(x => x.isAbn).length;
+  const total = items.length;
+  return { items, total, done, undone: total - done, abn, rate: total ? Math.round(done / total * 100) : 0 };
+}
+// 今月の月次点検の実施状況（対象：monthlyCheckpoints がある設備）
+function computeMonthlyInspStatus(inspections, ym = localDateStr().slice(0,7)) {
+  const targets = (inspections || []).filter(p => (p.monthlyCheckpoints||[]).length > 0);
+  const done = targets.filter(p => p.lastMonthlyCpState && p.lastMonthlyCpState.length > 0
+    && p.lastInspectedDate && p.lastInspectedDate.startsWith(ym) && p.lastInspType === 'monthly').length;
+  return { total: targets.length, done };
+}
+
+// 「2026-10-10」「2026/10/10」→「10月10日」
+function fmtMonthDay(v) {
+  const m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(String(v || ''));
+  return m ? Number(m[2]) + '月' + Number(m[3]) + '日' : String(v || '');
+}
+function daysBetween(fromStr, toStr) {
+  const a = new Date(String(fromStr).replace(/\//g, '-') + 'T00:00:00');
+  const b = new Date(String(toStr).replace(/\//g, '-') + 'T00:00:00');
+  return Math.round((b - a) / 86400000);
+}
+// ホームの「要対応」一覧（危険 → 注意 の順）
+function collectActionItems(data, today = localDateStr()) {
+  const out = [];
+  const push = (tone, label, title, detail, page) => out.push({ tone, label, title, detail, page });
+  (data.inspections || []).forEach(p => {
+    if (p.status === 'warn') push('danger', '異常', p.name, p.comment || '点検で異常がありました', 'slide-insp');
+    else if (p.status === 'due') push('danger', '期日超過', p.name, '点検の期日を過ぎています', 'slide-insp');
+  });
+  (data.raItems || []).forEach(r => {
+    if (!r.done && r.deadline && daysBetween(today, r.deadline) < 0)
+      push('danger', '期限切れ', 'リスクアセスメント', `${r.theme}・${fmtMonthDay(r.deadline)}まで`, 'slide-ra');
+  });
+  (data.patrolReports || []).forEach(rep => {
+    (rep.items || []).forEach(it => {
+      if (it.result === 'ng' && !it.resolved)
+        push('warn', '未改善', '安全巡視の指摘', (rep.area ? rep.area + '：' : '') + (it.item || ''), 'slide-patrol');
+    });
+  });
+  (data.qualifications || []).forEach(q => {
+    const n = String(q.holderNames || '').split(',').filter(x => x.trim()).length;
+    const who = n ? `${n}名・` : '';
+    if (q.status === 'expired') push('danger', '期限切れ', '資格の有効期限', `${q.name} ${who}${fmtMonthDay(q.expiry)}`, 'slide-qual');
+    else if (q.status === 'expiring') push('warn', '期限間近', '資格の有効期限', `${q.name} ${who}${fmtMonthDay(q.expiry)}`, 'slide-qual');
+  });
+  // 法令点検：設備ごとに最新の記録の次回予定日を見る
+  const latest = {};
+  (data.legalInsp || []).forEach(r => {
+    if (!r.nextDate) return;
+    const k = r.equipName || '';
+    if (!latest[k] || String(r.date || '') > String(latest[k].date || '')) latest[k] = r;
+  });
+  Object.values(latest).forEach(r => {
+    const d = daysBetween(today, r.nextDate);
+    if (d < 0) push('danger', '期限切れ', '法令点検', `${r.equipName}・次回 ${fmtMonthDay(r.nextDate)}`, 'slide-legal');
+    else if (d <= 30) push('warn', '期限間近', '法令点検', `${r.equipName}・次回 ${fmtMonthDay(r.nextDate)}`, 'slide-legal');
+  });
+  const rank = { danger: 0, warn: 1 };
+  return out.map((x, i) => ({ x, i })).sort((a, b) => (rank[a.x.tone] - rank[b.x.tone]) || (a.i - b.i)).map(o => o.x);
+}
+// 年間安全衛生計画のうち、今月に予定がある項目
+function currentMonthPlan(data, now = new Date()) {
+  const idx = (now.getMonth() + 1 - 4 + 12) % 12; // 年度月（0=4月）
+  return ((data.plan && data.plan.items) || [])
+    .filter(it => (it.plan || [])[idx])
+    .map(it => ({ name: it.name, done: !!(it.result || [])[idx] }));
+}
+
+function renderDailyList() {
+  const st = computeDailyStatus(D.inspections, localDateStr());
+  const { done, undone, abn } = st;
+  const rows = st.items.map(({ p, inspectedToday, isAbn }) => {
     const cls = !inspectedToday ? 'undone' : isAbn ? 'done' : 'done';
     const badge = !inspectedToday
       ? '<span class="daily-item-badge d-undone">'+T('undone')+'</span>'
@@ -7917,11 +7969,8 @@ function renderDailyList() {
       ${badge}
     </div>`;
   }).join('');
-  const inspections_for_count = dailyTargets;
-
-  const total = (typeof inspections_for_count !== 'undefined' ? inspections_for_count : inspections).length;
-  const rate = total > 0 ? Math.round(done/total*100) : 0;
-  const rateColor = rate===100?'#128A3E':rate>=70?'#B45309':'#0B63CE';
+  const rate = st.rate;
+  const rateColor = TONE_COLOR[rateLevel(rate, 100, 70)];
 
   document.getElementById('d-daily-rate-num').textContent = rate + '%';
   document.getElementById('d-daily-rate-num').style.color = rateColor;
