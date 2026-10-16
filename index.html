@@ -1000,6 +1000,239 @@ body.mode-kiosk #pbar { display:block; position:fixed; bottom:64px; left:0; heig
     document.dispatchEvent(new Event('fs-ready'));
     console.log('[FS] Firebase 接続完了');
   </script>
+<style id="ui-admin">
+/* ===================================================================
+   管理画面（Step 8）: 濃色ヘッダー・左目次・固定保存バー・表形式の行・PIN 入力
+   トークン（--c-* / --sp-* など）は後段 #app-ui の :root で定義。
+   このブロックは light-board-theme より前にあるため、そちらの !important を
+   上書きする所だけ #admin を付けて詳細度を上げている
+   =================================================================== */
+#admin{
+  /* 表形式の行の列幅（HTML の見出し行と JS の行で共有） */
+  --cols-insp:2fr 1fr 2fr 2fr 1fr auto;
+  --cols-qual:2fr 1fr 1fr auto;
+  --cols-org:150px 2fr 1.5fr 2fr auto;
+  --cols-tp:64px 2fr 1fr 1fr;
+  z-index:var(--z-admin); overflow:hidden; height:100vh; height:100dvh;
+  color:var(--c-ink); font-family:var(--font-ui); line-height:1.6;
+}
+#admin.open{ display:flex; flex-direction:column; }
+
+/* ---------- ヘッダー（濃色） ---------- */
+#admin .adm-hdr{
+  position:static; flex:none; height:auto; min-height:64px; display:flex; align-items:center; gap:var(--sp-3);
+  padding:env(safe-area-inset-top, 0px) max(var(--sp-4), env(safe-area-inset-right, 0px)) 0 max(var(--sp-5), env(safe-area-inset-left, 0px));
+  background:var(--c-ink); color:#fff; border-bottom:0;
+}
+#admin .adm-hdr-icon{ display:flex; color:#fff; }
+#admin .adm-hdr h1{ flex:1; min-width:0; margin:0; font-size:var(--fs-lg); font-weight:700; letter-spacing:0; color:#fff; }
+.adm-close{
+  min-height:44px; display:inline-flex; align-items:center; gap:6px; padding:0 var(--sp-4);
+  border:1px solid #5B6672; border-radius:10px; background:transparent; color:#fff;
+  font:inherit; font-size:15px; font-weight:700; cursor:pointer;
+}
+.adm-close:hover{ background:rgba(255,255,255,.08); }
+.adm-close:focus-visible{ outline-color:#fff; }
+
+/* ---------- 目次＋本文 ---------- */
+.adm-layout{ flex:1; min-height:0; display:flex; }
+.adm-toc{
+  flex:none; width:280px; overflow-y:auto; display:flex; flex-direction:column; gap:14px;
+  padding:var(--sp-4) var(--sp-3); background:var(--c-surface); border-right:1px solid var(--c-line);
+}
+.adm-toc-group{ display:flex; flex-direction:column; gap:2px; }
+.adm-toc-glabel{ padding:0 var(--sp-3) var(--sp-1); font-size:13px; font-weight:700; color:var(--c-sub); }
+.adm-toc-link{
+  width:100%; min-height:44px; display:flex; align-items:center; gap:var(--sp-2); padding:0 var(--sp-3);
+  border:0; border-radius:var(--r-sm); background:transparent; color:var(--c-ink);
+  font:inherit; font-size:15px; line-height:1.4; text-align:left; cursor:pointer;
+}
+.adm-toc-link:hover{ background:var(--c-neutral-bg); }
+.adm-toc-link[aria-current="true"]{ background:var(--c-info-bg); color:var(--c-info); font-weight:700; }
+.adm-toc-text{ flex:1; min-width:0; }
+.adm-toc-chev{ display:none; color:var(--c-sub); font-size:24px; line-height:1; }
+
+#admin .adm-body{
+  flex:1; min-width:0; max-width:none; margin:0; overflow-y:auto; overscroll-behavior:contain;
+  padding:var(--sp-5) var(--sp-6) var(--sp-6); display:flex; flex-direction:column; gap:var(--sp-6);
+}
+.adm-back{ display:none; }
+.adm-group{ width:100%; max-width:1100px; display:flex; flex-direction:column; gap:var(--sp-4); }
+.adm-group-title{ margin:0; font-size:var(--fs-sm); font-weight:700; color:var(--c-sub); }
+
+/* ---------- 節 ---------- */
+#admin .adm-section{ background:var(--c-surface); border:1px solid var(--c-line); border-radius:var(--r-lg); overflow:visible; scroll-margin-top:var(--sp-4); }
+#admin .adm-sec-hdr{
+  min-height:60px; padding:var(--sp-3) var(--sp-5); background:transparent;
+  border-bottom:1px solid var(--c-line-soft); border-radius:var(--r-lg) var(--r-lg) 0 0;
+}
+#admin .adm-sec-hdr span{ font-size:17px; font-weight:700; letter-spacing:0; }
+#admin .adm-sec-hdr .arrow{ font-size:20px; }
+#admin .adm-sec-body{ padding:var(--sp-5); gap:var(--sp-4); background:transparent; }
+#admin .adm-field{ min-width:min(200px, 100%); }
+#admin .adm-field label{ font-size:15px; font-weight:700; color:var(--c-ink-2); letter-spacing:0; }
+
+/* 入力欄は 48px 以上・16px 以上（iOS の自動ズーム防止も兼ねる） */
+#admin .adm-sec-body input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not([type="hidden"]),
+#admin .adm-sec-body select,
+#admin .adm-sec-body textarea{
+  min-height:var(--tap) !important; font-size:16px !important; font-family:inherit;
+  background-color:#fff !important; color:var(--c-ink) !important;
+  border:1px solid var(--c-field-line) !important; border-radius:10px !important;
+  padding-left:12px; padding-right:12px; box-sizing:border-box; max-width:100%;
+}
+#admin .adm-sec-body textarea{ padding-top:10px; padding-bottom:10px; }
+#admin .adm-sec-body input:focus,
+#admin .adm-sec-body select:focus,
+#admin .adm-sec-body textarea:focus{ border-color:var(--c-info) !important; box-shadow:0 0 0 1px var(--c-info); outline:none; }
+#admin #plan-adm-table input{ padding:0 6px; }
+#admin input[type="checkbox"]{ width:22px; height:22px; accent-color:var(--c-info); }
+#admin .adm-sec-body .btn,
+#admin .adm-sec-body > button,
+#admin #add-insp-btn{ min-height:var(--tap); border-radius:10px; letter-spacing:0; }
+#admin .btn-del{
+  min-height:var(--tap); padding:0 14px; border-radius:10px; font-size:15px; font-weight:700;
+  background:#fff; border:1px solid var(--c-danger-line); color:var(--c-danger); white-space:nowrap;
+}
+#admin .btn-del:hover{ background:var(--c-danger-bg); }
+
+/* ---------- 表形式の行（.adm-grid）: 列幅は --cols ---------- */
+.adm-grid{ display:grid; grid-template-columns:var(--cols, 1fr); gap:var(--sp-2) var(--sp-3); align-items:end; margin-bottom:var(--sp-3); }
+.adm-grid.adm-grid-top{ align-items:start; }
+.adm-grid > *{ min-width:0; }
+#admin .adm-grid > .adm-field{ min-width:0; flex:none; }
+.adm-grid-head{ align-items:center; margin-bottom:var(--sp-1); font-size:var(--fs-sm); font-weight:700; color:var(--c-sub); }
+.adm-cell{ display:flex; flex-direction:column; gap:var(--sp-1); }
+.adm-cell-label{ font-size:var(--fs-sm); font-weight:700; color:var(--c-ink-2); }
+.adm-grid.has-head .adm-cell-label{ display:none; }
+.adm-cell-month{ align-self:center; font-weight:700; color:var(--c-info); }
+.adm-cell-act{ align-self:end; }
+.adm-card{ background:var(--c-surface); border:1px solid var(--c-line); border-radius:var(--r-md); padding:var(--sp-4); margin-bottom:var(--sp-3); }
+.adm-card > .adm-grid:last-child{ margin-bottom:0; }
+.adm-inline-row{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-3); }
+
+/* ---------- 節の中の説明・ボタン（バックアップ・PIN） ---------- */
+.adm-note{ margin:0; font-size:15px; line-height:1.7; color:var(--c-sub); }
+.adm-actions{ display:flex; flex-wrap:wrap; gap:var(--sp-3); }
+.adm-btn{
+  min-height:var(--tap); display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0 var(--sp-5);
+  border:2px solid var(--c-field-line); border-radius:var(--r-md); background:var(--c-surface); color:var(--c-ink);
+  font:inherit; font-size:var(--fs-md); font-weight:700; text-align:center; cursor:pointer;
+}
+.adm-btn:hover{ background:var(--c-neutral-bg); }
+.adm-btn:disabled{ opacity:.45; cursor:default; }
+.adm-btn-primary{ background:var(--c-info); border-color:var(--c-info); color:#fff; }
+.adm-btn-primary:hover{ background:#084A94; }
+.adm-btn-danger{ border-color:var(--c-danger-line); color:var(--c-danger); }
+.adm-pin-status{ margin:0; display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2); font-size:var(--fs-md); }
+.adm-pin-msg{ margin:0; font-weight:700; color:var(--c-ok); }
+.adm-pin-msg.is-error{ color:var(--c-danger); }
+.adm-pin-msg:empty{ display:none; }
+
+/* ---------- 固定保存バー ---------- */
+.adm-savebar{
+  flex:none; display:flex; align-items:center; gap:var(--sp-3);
+  padding:var(--sp-3) max(var(--sp-6), env(safe-area-inset-right, 0px)) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px)) calc(280px + var(--sp-6));
+  background:var(--c-surface); border-top:1px solid var(--c-line); box-shadow:0 -4px 12px rgba(22,32,42,.06);
+}
+.adm-savebar-status{ flex:1; min-width:0; display:flex; align-items:center; gap:var(--sp-2); font-size:var(--fs-md); font-weight:700; color:var(--c-sub); }
+.adm-savebar.is-dirty .adm-savebar-status{ color:var(--c-warn-text); }
+.adm-savebar.is-dirty .adm-savebar-status::before{ content:''; flex:none; width:10px; height:10px; border-radius:50%; background:var(--c-warn); }
+.adm-btn-save{ min-height:52px; padding:0 28px; font-size:17px; }
+
+/* ---------- タブレット（600〜1023px）: 目次は上部の横スクロールのチップ ---------- */
+@media (max-width:1023px){
+  .adm-layout{ flex-direction:column; }
+  .adm-toc{
+    width:auto; flex-direction:row; gap:var(--sp-2); overflow-x:auto; overflow-y:hidden;
+    padding:var(--sp-2) var(--sp-4); border-right:0; border-bottom:1px solid var(--c-line); scrollbar-width:thin;
+  }
+  .adm-toc-group{ flex:none; flex-direction:row; gap:var(--sp-2); }
+  .adm-toc-glabel{ display:none; }
+  .adm-toc-link{ width:auto; white-space:nowrap; border:1px solid var(--c-line); border-radius:var(--r-pill); padding:0 14px; font-size:14px; }
+  .adm-toc-link[aria-current="true"]{ border-color:var(--c-info); }
+  #admin .adm-body{ padding:var(--sp-4) var(--sp-5) var(--sp-5); gap:var(--sp-5); }
+  #admin .month-grid-adm{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .adm-savebar{ padding-left:var(--sp-5); padding-right:var(--sp-5); }
+}
+
+/* ---------- スマホ（〜599px）: 節の一覧 → 選んだ節だけ表示 ---------- */
+@media (max-width:599px){
+  #admin .adm-hdr{ min-height:56px; padding-left:var(--sp-4); padding-right:var(--sp-3); }
+  #admin .adm-hdr h1{ font-size:18px; }
+  .adm-toc{
+    flex:1; flex-direction:column; gap:var(--sp-5); overflow-x:hidden; overflow-y:auto;
+    padding:var(--sp-4) var(--sp-4) var(--sp-6); background:var(--c-bg); border-bottom:0;
+  }
+  .adm-toc-group{ flex-direction:column; gap:0; }
+  .adm-toc-glabel{ display:block; padding:0 var(--sp-1) var(--sp-2); font-size:14px; }
+  .adm-toc-link{
+    width:100%; min-height:56px; white-space:normal; padding:0 var(--sp-4); font-size:var(--fs-md);
+    background:var(--c-surface); border:1px solid var(--c-line); border-top-width:0; border-radius:0;
+  }
+  .adm-toc-glabel + .adm-toc-link{ border-top-width:1px; border-radius:var(--r-lg) var(--r-lg) 0 0; }
+  .adm-toc-link:last-child{ border-radius:0 0 var(--r-lg) var(--r-lg); }
+  .adm-toc-glabel + .adm-toc-link:last-child{ border-radius:var(--r-lg); }
+  .adm-toc-link[aria-current="true"]{ border-color:var(--c-line); }
+  .adm-toc-chev{ display:block; }
+  #admin:not(.is-detail) .adm-body{ display:none; }
+  #admin.is-detail .adm-toc{ display:none; }
+  #admin.is-detail .adm-group:not(.is-current),
+  #admin.is-detail .adm-section:not(.is-current),
+  #admin.is-detail .adm-group-title{ display:none; }
+  .adm-back{
+    display:inline-flex; align-self:flex-start; align-items:center; min-height:var(--tap); margin:calc(-1 * var(--sp-2)) 0;
+    padding:0 var(--sp-2); border:0; background:transparent; color:var(--c-info); font:inherit; font-size:var(--fs-md); font-weight:700; cursor:pointer;
+  }
+  #admin .adm-body{ padding:var(--sp-3) var(--sp-4) var(--sp-5); gap:var(--sp-3); }
+  #admin .adm-sec-hdr{ padding:var(--sp-3) var(--sp-4); }
+  #admin .adm-sec-body{ padding:var(--sp-4); }
+  #admin .adm-field{ flex-basis:100%; min-width:0; }
+  #admin .month-grid-adm{ grid-template-columns:1fr; }
+  /* 表形式の行は1列。見出し行は隠し、各入力の上にラベルを出す */
+  .adm-grid{ grid-template-columns:1fr; }
+  .adm-grid-head{ display:none; }
+  .adm-grid.has-head .adm-cell-label{ display:block; }
+  .adm-cell-act{ justify-self:start; }
+  .adm-grid-row{ padding-top:var(--sp-3); border-top:1px solid var(--c-line-soft); }
+  /* 保存バーは未保存のときだけ */
+  .adm-savebar:not(.is-dirty){ display:none; }
+  .adm-savebar{ flex-wrap:wrap; gap:var(--sp-2); padding:var(--sp-2) var(--sp-4) calc(var(--sp-2) + env(safe-area-inset-bottom, 0px)); }
+  .adm-savebar-status{ flex-basis:100%; font-size:var(--fs-sm); }
+  .adm-savebar .adm-btn{ flex:1; padding:0 var(--sp-3); }
+}
+
+/* ---------- PIN 入力（4けた） ---------- */
+.pin-dialog{
+  position:fixed; inset:0; z-index:var(--z-dialog); display:flex; align-items:center; justify-content:center;
+  padding:var(--sp-4); background:rgba(22,32,42,.55); color:var(--c-ink); font-family:var(--font-ui);
+}
+.pin-card{
+  width:400px; max-width:100%; max-height:100%; overflow-y:auto; box-sizing:border-box;
+  display:flex; flex-direction:column; align-items:center; gap:var(--sp-4); padding:var(--sp-6);
+  background:var(--c-surface); border-radius:20px; box-shadow:0 20px 48px rgba(22,32,42,.3);
+}
+.pin-icon{ width:56px; height:56px; flex:none; border-radius:16px; background:var(--c-info-bg); color:var(--c-info); display:flex; align-items:center; justify-content:center; }
+.pin-title{ margin:0; font-size:22px; font-weight:700; text-align:center; }
+.pin-sub{ margin:calc(-1 * var(--sp-2)) 0 0; font-size:15px; color:var(--c-sub); text-align:center; }
+.pin-dots{ display:flex; gap:var(--sp-4); padding:var(--sp-1) 0; }
+.pin-dot{ width:20px; height:20px; box-sizing:border-box; border-radius:50%; border:2px solid var(--c-field-line); }
+.pin-dot.is-filled{ background:var(--c-ink); border-color:var(--c-ink); }
+.pin-msg{ margin:0; min-height:1.5em; font-size:15px; font-weight:700; color:var(--c-danger); text-align:center; }
+.pin-pad{ width:100%; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; }
+.pin-key{
+  height:64px; border:1px solid var(--c-line); border-radius:14px; background:#F7F9FA; color:var(--c-ink);
+  font:inherit; font-size:26px; font-weight:700; cursor:pointer; touch-action:manipulation;
+}
+.pin-key:active{ background:var(--c-neutral-bg); }
+.pin-key:disabled{ opacity:.4; cursor:default; }
+.pin-key-sub{ display:flex; align-items:center; justify-content:center; border:0; background:transparent; color:var(--c-sub); font-size:16px; }
+.pin-note{ margin:0; font-size:14px; line-height:1.6; color:var(--c-sub); text-align:center; }
+@media (max-height:600px){
+  .pin-card{ gap:var(--sp-2); padding:var(--sp-4); }
+  .pin-icon, .pin-note{ display:none; }
+}
+</style>
 <style id="light-board-theme">
 /* ===================================================================
    白基調 電子掲示板テーマ（i-Clip Viewer 風）
@@ -3315,37 +3548,17 @@ function doGet(e) {
 </style>
 
 
-<div id="admin">
+<div id="admin" role="dialog" aria-modal="true" aria-labelledby="adm-title">
   <div class="adm-hdr">
-    <h1>⚙ 管理画面 — 安全活動 表示設定</h1>
-    <div class="adm-hdr-btns">
-      <button class="btn btn-ghost" onclick="exportData()">📤 JSONバックアップ</button>
-      <label class="btn btn-ghost" style="cursor:pointer">📥 JSON復元<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
-      <button class="btn btn-ghost" onclick="openDrivePanel()" style="background:rgba(66,133,244,.15);border-color:rgba(66,133,244,.4);color:#4285F4;">🔵 Googleドライブ連携</button>
-      <button class="btn btn-ghost" onclick="openExcelExport()" style="background:rgba(0,168,89,.15);border-color:rgba(0,168,89,.4);color:#128A3E;">📊 記録Excel書き出し</button>
-      <button class="btn btn-gold" onclick="saveAll()">💾 保存して反映</button>
-      <button class="btn btn-ghost" onclick="closeAdmin()">✕ 閉じる</button>
-    </div>
+    <span class="adm-hdr-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+    <h1 id="adm-title">管理画面</h1>
+    <button type="button" class="adm-close" onclick="closeAdmin()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>閉じる</button>
   </div>
-  <!-- 目次 -->
-  <div style="display:flex;flex-wrap:wrap;gap:6px;padding:12px 20px;background:rgba(0,0,0,.035);border-bottom:1px solid rgba(0,0,0,.06);">
-    <button onclick="document.getElementById('sec-basic').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-basic').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">🏢 基本設定</button>
-    <button onclick="document.getElementById('sec-goals').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-goals').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">🎯 年間安全目標</button>
-    <button onclick="document.getElementById('sec-plan').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-plan').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📋 安全衛生計画</button>
-    <button onclick="document.getElementById('sec-months').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-months').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📅 月別活動</button>
-    <button onclick="document.getElementById('sec-training-plan').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-training-plan').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">🎓 年間訓練計画</button>
-    <button onclick="document.getElementById('sec-org').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-org').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">🏢 組織図</button>
-    <button onclick="document.getElementById('sec-ra').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-ra').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">⚠ リスクアセスメント</button>
-    <button onclick="document.getElementById('sec-legal').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-legal').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📋 法令点検</button>
-    <button onclick="document.getElementById('sec-insp').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-insp').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">🔧 設備点検</button>
-    <button onclick="document.getElementById('sec-qual').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-qual').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">🏅 保有資格</button>
-    <button onclick="document.getElementById('sec-noaccident').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-noaccident').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">🏆 無災害記録</button>
-    <button onclick="document.getElementById('sec-stats').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-stats').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📊 無災害・ヒヤリハット</button>
-    <button onclick="document.getElementById('sec-accident').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-accident').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">⚠ 事故事例</button>
-    <button onclick="document.getElementById('sec-nm-reports').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-nm-reports').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📋 ヒヤリハットBOX</button>
-    <button onclick="document.getElementById('sec-docs').closest('.adm-section').querySelector('.adm-sec-hdr').click();setTimeout(()=>document.getElementById('sec-docs').scrollIntoView({behavior:'smooth',block:'start'}),150)" style="background:rgba(0,0,0,.055);border:1px solid rgba(0,0,0,.10);color:rgba(0,0,0,.68);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 安全資料(PDF)</button>
-  </div>
+  <div class="adm-layout">
+  <!-- 目次（.adm-section から自動生成。buildAdmToc） -->
+  <nav id="adm-toc" class="adm-toc" aria-label="管理メニュー"></nav>
   <div class="adm-body">
+    <button type="button" class="adm-back" onclick="admBackToList()">‹ 一覧</button>
 
     <!-- 基本設定 -->
     <div class="adm-section">
@@ -3509,7 +3722,7 @@ function doGet(e) {
       <div class="adm-sec-hdr" onclick="toggleSection(this)"><span>🔧 設備点検 状況</span><span class="arrow">▾</span></div>
       <div class="adm-sec-body" id="sec-insp">
         <div class="insp-adm-list">
-          <div class="insp-adm-row header"><span>設備名</span><span>アイコン</span><span>前回点検日</span><span>次回予定日</span><span>ステータス</span><span></span></div>
+          <div class="adm-grid adm-grid-head" style="--cols:var(--cols-insp)"><span>設備名</span><span>アイコン</span><span>前回点検日</span><span>次回予定日</span><span>ステータス</span><span></span></div>
           <div id="insp-adm-list"></div>
         </div>
         <button id="add-insp-btn" onclick="addInspRow()">＋ 設備を追加</button>
@@ -3521,8 +3734,8 @@ function doGet(e) {
       <div class="adm-sec-hdr" onclick="toggleSection(this)"><span>🏅 保有資格 ／ 資格取得スケジュール</span><span class="arrow">▾</span></div>
       <div class="adm-sec-body" id="sec-qual">
         <p style="font-size:16px;color:var(--sub);margin-bottom:4px">▼ 保有資格リスト</p>
-        <div style="font-size:13px;color:var(--sub);margin-bottom:10px;display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;padding:0 4px;letter-spacing:1px;">
-          <span>資格名</span><span>保有人数</span><span style="color:var(--gold);">有効期限（例: 2027/03/31）</span><span></span>
+        <div class="adm-grid adm-grid-head" style="--cols:var(--cols-qual)">
+          <span>資格名</span><span>有効期限</span><span>状態</span><span></span>
         </div>
         <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:12px;padding:0 4px;">
           ※ 有効期限欄には「2027/03/31」のような日付、または「—（更新不要）」と入力してください
@@ -3531,8 +3744,8 @@ function doGet(e) {
         <button onclick="addQual()" style="width:100%;padding:10px;background:rgba(11,95,191,0.066);border:1px solid rgba(11,95,191,0.110);color:#1D4ED8;border-radius:4px;cursor:pointer;font-size:16px;letter-spacing:1px;margin-top:4px">＋ 資格を追加</button>
 
         <p style="font-size:16px;color:var(--sub);margin:18px 0 8px">▼ 資格取得スケジュール</p>
-        <div style="font-size:15px;color:var(--sub);margin-bottom:10px;display:grid;grid-template-columns:2fr 2fr 1fr 1fr auto;gap:8px;padding:0 4px">
-          <span>資格名</span><span>受講予定者</span><span>予定日</span><span>ステータス</span><span></span>
+        <div class="adm-grid adm-grid-head" style="--cols:var(--cols-qual)">
+          <span>資格名</span><span>予定日</span><span>状態</span><span></span>
         </div>
         <div id="sched-adm-list"></div>
         <button onclick="addSched()" style="width:100%;padding:10px;background:rgba(11,95,191,0.066);border:1px solid rgba(11,95,191,0.110);color:#1D4ED8;border-radius:4px;cursor:pointer;font-size:16px;letter-spacing:1px;margin-top:4px">＋ スケジュールを追加</button>
@@ -3642,8 +3855,615 @@ function doGet(e) {
       </div>
     </div>
 
+    <!-- バックアップ・書き出し（旧ヘッダーのボタン） -->
+    <div class="adm-section">
+      <div class="adm-sec-hdr" onclick="toggleSection(this)"><span>💾 バックアップ・書き出し</span><span class="arrow">▾</span></div>
+      <div class="adm-sec-body" id="sec-backup" data-adm-nodirty>
+        <p class="adm-note">設定データの保存（JSON）・復元、Googleドライブ連携、記録のExcel書き出しを行います。復元すると今の設定は上書きされます。</p>
+        <div class="adm-actions">
+          <button type="button" class="adm-btn" onclick="exportData()">📤 JSONバックアップ</button>
+          <label class="adm-btn">📥 JSON復元<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+          <button type="button" class="adm-btn" onclick="openDrivePanel()">🔵 Googleドライブ連携</button>
+          <button type="button" class="adm-btn" onclick="openExcelExport()">📊 記録Excel書き出し</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PIN の設定 -->
+    <div class="adm-section">
+      <div class="adm-sec-hdr" onclick="toggleSection(this)"><span>🔒 PINの設定</span><span class="arrow">▾</span></div>
+      <div class="adm-sec-body" id="sec-pin" data-adm-nodirty>
+        <p class="adm-note">管理画面（とデータの書き出し）を開くときに、4けたのPINを聞くようにできます。これは<b>誤操作防止</b>のためのしくみで、<b>セキュリティ対策ではありません</b>（しくみを知っている人は回避できます）。一度入力すると、その端末ではブラウザを閉じるまで聞きません。PINはすべての端末で共通です。</p>
+        <p class="adm-pin-status" id="apin-status"></p>
+        <div class="adm-row">
+          <div class="adm-field" id="apin-cur-wrap"><label for="apin-cur">現在のPIN</label><input type="password" id="apin-cur" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+          <div class="adm-field"><label for="apin-new">新しいPIN（4けたの数字）</label><input type="password" id="apin-new" inputmode="numeric" maxlength="4" autocomplete="new-password"></div>
+          <div class="adm-field"><label for="apin-new2">新しいPIN（確認）</label><input type="password" id="apin-new2" inputmode="numeric" maxlength="4" autocomplete="new-password"></div>
+        </div>
+        <p class="adm-pin-msg" id="apin-msg" role="status" aria-live="polite"></p>
+        <div class="adm-actions">
+          <button type="button" class="adm-btn adm-btn-primary" id="apin-save-btn" onclick="adminPinFormSave()">PINを設定する</button>
+          <button type="button" class="adm-btn adm-btn-danger" id="apin-clear-btn" onclick="adminPinFormClear()">PINを解除する</button>
+        </div>
+        <p class="adm-note">PINを忘れたときは、Firebase コンソールの Firestore で <b>safety / main</b> の <b>adminPin</b> を削除（または null に）してから、各端末で画面を読み込み直してください。</p>
+      </div>
+    </div>
+
+  </div>
+  </div>
+  <!-- 固定保存バー -->
+  <div id="adm-savebar" class="adm-savebar" role="region" aria-label="保存">
+    <span class="adm-savebar-status" id="adm-savebar-status" aria-live="polite">変更はありません</span>
+    <button type="button" class="adm-btn" id="adm-discard-btn" onclick="admDiscardChanges()" disabled>変更を取り消す</button>
+    <button type="button" class="adm-btn adm-btn-primary adm-btn-save" onclick="saveAll()">保存して反映</button>
   </div>
 </div>
+
+<!-- 管理画面の PIN 入力（4けた） -->
+<div id="pin-dialog" class="pin-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="pin-dialog-title" aria-describedby="pin-dialog-sub">
+  <div class="pin-card">
+    <span class="pin-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+    <h2 id="pin-dialog-title" class="pin-title">管理画面のPINを入力</h2>
+    <p id="pin-dialog-sub" class="pin-sub">4けたの数字を入力してください</p>
+    <div class="pin-dots" id="pin-dialog-dots" role="img" aria-label="0けた入力済み"><span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span></div>
+    <p class="pin-msg" id="pin-dialog-msg" role="alert"></p>
+    <div class="pin-pad">
+      <button type="button" class="pin-key" onclick="pinKey('1')">1</button>
+      <button type="button" class="pin-key" onclick="pinKey('2')">2</button>
+      <button type="button" class="pin-key" onclick="pinKey('3')">3</button>
+      <button type="button" class="pin-key" onclick="pinKey('4')">4</button>
+      <button type="button" class="pin-key" onclick="pinKey('5')">5</button>
+      <button type="button" class="pin-key" onclick="pinKey('6')">6</button>
+      <button type="button" class="pin-key" onclick="pinKey('7')">7</button>
+      <button type="button" class="pin-key" onclick="pinKey('8')">8</button>
+      <button type="button" class="pin-key" onclick="pinKey('9')">9</button>
+      <button type="button" class="pin-key pin-key-sub" onclick="cancelAdminPin()">やめる</button>
+      <button type="button" class="pin-key" onclick="pinKey('0')">0</button>
+      <button type="button" class="pin-key pin-key-sub" aria-label="1文字消す" onclick="pinBackspace()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5h11v14H9l-6-7z"/><path d="M13 9l4 6M17 9l-4 6"/></svg></button>
+    </div>
+    <p class="pin-note">一度入力すると、ブラウザを閉じるまで聞きません。<br>キーボードの数字でも入力できます。<br>5回まちがえると30秒待ちになります。</p>
+  </div>
+</div>
+<script id="admin-ui-js">
+// ===================== 管理画面 UI（PIN・目次・保存バー）=====================
+// この script は本体 script より前に読み込まれる。D・persist・renderAdmin などは呼び出し時に参照する。
+
+// ---------- 簡易 PIN ロック（誤操作防止。セキュリティ対策ではない）----------
+// 保存先: D.adminPin = { hash, salt, updatedAt }（Firestore safety/main で全端末共通）
+// hash = SHA-256(salt + PIN) の16進文字列。解除は null を保存する（Firestore は merge 保存のため）
+const ADMIN_PIN_SESSION_KEY = 'sm_admin_unlocked';  // ブラウザ（タブ）を閉じるまで有効
+const ADMIN_PIN_LOCK_KEY = 'sm_admin_pin_lock';
+const ADMIN_PIN_MAX_FAILS = 5;
+const ADMIN_PIN_LOCK_MS = 30000;
+const adminPinState = { entry:'', pending:null, busy:false, timer:0, msg:'', returnFocus:null, lockMem:{ fails:0, until:0 } };
+
+function adminPinSupported() {
+  return !!(window.crypto && window.crypto.subtle && typeof window.crypto.subtle.digest === 'function');
+}
+function adminPinToHex(buf) {
+  return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+}
+// 文字列を UTF-8 のバイト列にする（TextEncoder が無い環境向けの代替つき）
+function adminPinBytes(text) {
+  if (typeof TextEncoder === 'function') return new TextEncoder().encode(text);
+  const enc = encodeURIComponent(text);
+  const out = [];
+  for (let i = 0; i < enc.length; i++) {
+    if (enc[i] === '%') { out.push(parseInt(enc.substr(i + 1, 2), 16)); i += 2; }
+    else out.push(enc.charCodeAt(i));
+  }
+  return new Uint8Array(out);
+}
+// SHA-256(salt + PIN) を16進文字列で返す
+async function adminPinHash(pin, salt) {
+  const buf = await window.crypto.subtle.digest('SHA-256', adminPinBytes(String(salt) + String(pin)));
+  return adminPinToHex(buf);
+}
+function adminPinIsSet() {
+  const p = (typeof D === 'object' && D) ? D.adminPin : null;
+  return !!(p && p.hash && p.salt);
+}
+function adminPinSessionGet() {
+  try { return sessionStorage.getItem(ADMIN_PIN_SESSION_KEY) || ''; }
+  catch (e) { console.warn('[PIN] sessionStorage を読めません', e); return ''; }
+}
+function adminPinSessionSet(value) {
+  try {
+    if (value) sessionStorage.setItem(ADMIN_PIN_SESSION_KEY, value);
+    else sessionStorage.removeItem(ADMIN_PIN_SESSION_KEY);
+  } catch (e) { console.warn('[PIN] sessionStorage に書けません', e); }
+}
+// このブラウザ（タブ）で今の PIN を一度通したか（別の端末で PIN が変わったら聞き直す）
+function adminPinIsUnlocked() {
+  return adminPinIsSet() && adminPinSessionGet() === D.adminPin.hash;
+}
+function adminPinReadLock() {
+  try {
+    const raw = sessionStorage.getItem(ADMIN_PIN_LOCK_KEY);
+    const o = raw ? JSON.parse(raw) : {};
+    return { fails:Number(o.fails) || 0, until:Number(o.until) || 0 };
+  } catch (e) {
+    console.warn('[PIN] 待ち状態を読めません', e);
+    return { ...adminPinState.lockMem };
+  }
+}
+function adminPinWriteLock(st) {
+  adminPinState.lockMem = { fails:st.fails, until:st.until };
+  try { sessionStorage.setItem(ADMIN_PIN_LOCK_KEY, JSON.stringify(adminPinState.lockMem)); }
+  catch (e) { console.warn('[PIN] 待ち状態を保存できません', e); }
+}
+// 30秒待ちの残り秒数（待ちでなければ 0）
+function adminPinLockRemaining(now = Date.now()) {
+  const st = adminPinReadLock();
+  return st.until > now ? Math.ceil((st.until - now) / 1000) : 0;
+}
+function adminPinLockMsg(sec) { return 'PINを5回まちがえました。あと' + sec + '秒待ってください'; }
+// Firestore（safety/main）の最初の読み込みが終わっていない間は、PIN 未設定と判断しない
+function adminPinSyncing() { return !!window.FS && !window.FS_MAIN_LOADED; }
+async function adminPinVerify(pin) {
+  if (!adminPinIsSet()) return false;
+  return (await adminPinHash(pin, D.adminPin.salt)) === D.adminPin.hash;
+}
+
+// PIN が必要な操作の前に呼ぶ。通ったら（または PIN 未設定なら）callback を実行する
+function requireAdminPin(callback) {
+  const run = () => { if (typeof callback === 'function') callback(); };
+  if (adminPinIsUnlocked()) { run(); return true; }
+  if (adminPinSyncing()) { showToast('データを同期中です。数秒後にもう一度お試しください'); return false; }
+  if (!adminPinIsSet()) { run(); return true; }
+  if (!adminPinSupported()) { showToast('この環境ではPINを使えません'); run(); return true; }
+  openPinDialog(callback);
+  return false;
+}
+
+function openPinDialog(callback) {
+  const dlg = document.getElementById('pin-dialog');
+  if (!dlg) { console.warn('[PIN] pin-dialog がありません'); return; }
+  adminPinState.pending = typeof callback === 'function' ? callback : null;
+  adminPinState.entry = '';
+  adminPinState.msg = '';
+  adminPinState.returnFocus = document.activeElement;
+  dlg.hidden = false;
+  dlg.classList.add('is-open');
+  adminPinStartTicker();
+  adminPinRender();
+  const first = dlg.querySelector('.pin-key');
+  if (first) first.focus();
+}
+function closePinDialog() {
+  const dlg = document.getElementById('pin-dialog');
+  if (dlg) { dlg.hidden = true; dlg.classList.remove('is-open'); }
+  clearInterval(adminPinState.timer);
+  adminPinState.timer = 0;
+  adminPinState.entry = '';
+  adminPinState.msg = '';
+  const back = adminPinState.returnFocus;
+  adminPinState.returnFocus = null;
+  if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
+}
+function cancelAdminPin() {
+  adminPinState.pending = null;
+  closePinDialog();
+}
+// 待ちの間は1秒ごとに残り秒数を表示する
+function adminPinStartTicker() {
+  clearInterval(adminPinState.timer);
+  adminPinState.timer = 0;
+  if (adminPinLockRemaining() <= 0) return;
+  adminPinState.timer = setInterval(() => {
+    const rem = adminPinLockRemaining();
+    adminPinState.msg = rem > 0 ? adminPinLockMsg(rem) : '';
+    if (rem <= 0) { clearInterval(adminPinState.timer); adminPinState.timer = 0; }
+    adminPinRender();
+  }, 1000);
+}
+function adminPinRender() {
+  const dlg = document.getElementById('pin-dialog');
+  if (!dlg) return;
+  const n = adminPinState.entry.length;
+  dlg.querySelectorAll('.pin-dot').forEach((d, i) => d.classList.toggle('is-filled', i < n));
+  const dots = document.getElementById('pin-dialog-dots');
+  if (dots) dots.setAttribute('aria-label', n + 'けた入力済み');
+  const msg = document.getElementById('pin-dialog-msg');
+  if (msg) msg.textContent = adminPinState.msg;
+  const locked = adminPinState.timer !== 0;
+  dlg.querySelectorAll('.pin-key').forEach(b => {
+    if (b.getAttribute('onclick') !== 'cancelAdminPin()') b.disabled = locked;
+  });
+}
+// テンキー・キーボードの数字。4けたそろったら照合し、その Promise を返す
+function pinKey(d) {
+  const digit = String(d);
+  if (adminPinState.busy || !/^\d$/.test(digit) || adminPinState.entry.length >= 4) return null;
+  const rem = adminPinLockRemaining();
+  if (rem > 0) { adminPinState.msg = adminPinLockMsg(rem); adminPinRender(); return null; }
+  adminPinState.entry += digit;
+  adminPinRender();
+  if (adminPinState.entry.length === 4) return submitAdminPin(adminPinState.entry);
+  return null;
+}
+function pinBackspace() {
+  if (adminPinState.busy) return;
+  adminPinState.entry = adminPinState.entry.slice(0, -1);
+  adminPinRender();
+}
+// PIN を照合する。結果は 'ok' / 'ng' / 'locked'（now はテスト用に差し替え可能）
+async function submitAdminPin(pin, now = Date.now()) {
+  const rem = adminPinLockRemaining(now);
+  if (rem > 0) {
+    adminPinState.entry = '';
+    adminPinState.msg = adminPinLockMsg(rem);
+    adminPinRender();
+    return 'locked';
+  }
+  adminPinState.busy = true;
+  let ok = false;
+  try { ok = await adminPinVerify(pin); }
+  catch (e) { console.warn('[PIN] 照合できませんでした', e); }
+  finally { adminPinState.busy = false; }
+  adminPinState.entry = '';
+  if (ok) {
+    adminPinWriteLock({ fails:0, until:0 });
+    adminPinSessionSet(D.adminPin.hash);
+    const cb = adminPinState.pending;
+    adminPinState.pending = null;
+    closePinDialog();
+    if (cb) cb();
+    return 'ok';
+  }
+  const st = adminPinReadLock();
+  st.fails += 1;
+  if (st.fails >= ADMIN_PIN_MAX_FAILS) {
+    st.fails = 0;
+    st.until = now + ADMIN_PIN_LOCK_MS;
+    adminPinState.msg = adminPinLockMsg(Math.ceil(ADMIN_PIN_LOCK_MS / 1000));
+  } else {
+    adminPinState.msg = 'PINがちがいます（あと' + (ADMIN_PIN_MAX_FAILS - st.fails) + '回まちがえると30秒待ち）';
+  }
+  adminPinWriteLock(st);
+  if (st.until > now) adminPinStartTicker();
+  adminPinRender();
+  return 'ng';
+}
+
+// PIN を設定する（変更も同じ）。salt は毎回作り直す
+async function setAdminPin(pin) {
+  if (!/^\d{4}$/.test(String(pin))) throw new Error('PIN は4けたの数字にしてください');
+  const salt = adminPinToHex(window.crypto.getRandomValues(new Uint8Array(16)));
+  const hash = await adminPinHash(pin, salt);
+  D.adminPin = { hash, salt, updatedAt:new Date().toISOString() };
+  persist();
+  adminPinSessionSet(hash);  // 設定した端末はこのまま使える
+  return true;
+}
+// PIN を解除する（Firestore は merge 保存なので、キーを消すのではなく null で上書きする）
+function clearAdminPin() {
+  D.adminPin = null;
+  persist();
+  adminPinSessionSet('');
+  return true;
+}
+
+// ---------- 設定節「PINの設定」 ----------
+function adminPinFmtDate(iso) {
+  const d = new Date(iso);
+  if (!iso || isNaN(d.getTime())) return '';
+  return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
+}
+function renderAdminPinSection(message, isError) {
+  const status = document.getElementById('apin-status');
+  if (!status) return;
+  const set = adminPinIsSet();
+  const date = set ? adminPinFmtDate(D.adminPin.updatedAt) : '';
+  status.innerHTML = set
+    ? '<span class="chip tone-ok">設定済み</span> 管理画面を開くときにPINを聞きます' + (date ? '（最終変更 ' + admEsc(date) + '）' : '')
+    : '<span class="chip tone-neutral">未設定</span> 今はPINなしで管理画面を開けます';
+  const curWrap = document.getElementById('apin-cur-wrap');
+  if (curWrap) curWrap.hidden = !set;
+  ['apin-cur', 'apin-new', 'apin-new2'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const saveBtn = document.getElementById('apin-save-btn');
+  const clearBtn = document.getElementById('apin-clear-btn');
+  if (saveBtn) saveBtn.textContent = set ? 'PINを変更する' : 'PINを設定する';
+  if (clearBtn) clearBtn.hidden = !set;
+  const supported = adminPinSupported();
+  if (saveBtn) saveBtn.disabled = !supported;
+  if (clearBtn) clearBtn.disabled = !supported;
+  adminPinFormMsg(supported ? (message || '') : 'この環境ではPINを使えません（https で開いてください）', isError || !supported);
+}
+function adminPinFormMsg(text, isError) {
+  const el = document.getElementById('apin-msg');
+  if (!el) return;
+  el.textContent = text || '';
+  el.classList.toggle('is-error', !!isError);
+}
+function adminPinFormValue(id) {
+  const el = document.getElementById(id);
+  return el ? String(el.value || '').trim() : '';
+}
+async function adminPinFormSave() {
+  if (!adminPinSupported()) { adminPinFormMsg('この環境ではPINを使えません', true); return false; }
+  const wasSet = adminPinIsSet();
+  const next = adminPinFormValue('apin-new');
+  if (!/^\d{4}$/.test(next)) { adminPinFormMsg('新しいPINは4けたの数字で入力してください', true); return false; }
+  if (next !== adminPinFormValue('apin-new2')) { adminPinFormMsg('確認のPINが一致しません', true); return false; }
+  if (wasSet && !(await adminPinVerify(adminPinFormValue('apin-cur')))) {
+    adminPinFormMsg('現在のPINがちがいます', true);
+    return false;
+  }
+  await setAdminPin(next);
+  renderAdminPinSection(wasSet ? 'PINを変更しました' : 'PINを設定しました。次からは管理画面を開くときにPINを聞きます');
+  showToast(wasSet ? '✓ PINを変更しました' : '✓ PINを設定しました');
+  return true;
+}
+async function adminPinFormClear() {
+  if (!adminPinIsSet()) return false;
+  if (!adminPinSupported()) { adminPinFormMsg('この環境ではPINを使えません', true); return false; }
+  if (!(await adminPinVerify(adminPinFormValue('apin-cur')))) {
+    adminPinFormMsg('現在のPINがちがいます', true);
+    return false;
+  }
+  if (!confirm('PINを解除しますか？\nすべての端末で、PINなしで管理画面を開けるようになります。')) return false;
+  clearAdminPin();
+  renderAdminPinSection('PINを解除しました');
+  showToast('✓ PINを解除しました');
+  return true;
+}
+
+// PIN 入力中のキーボード操作（数字・Backspace・Esc、Tab は中で回す）
+document.addEventListener('keydown', e => {
+  const dlg = document.getElementById('pin-dialog');
+  if (!dlg || dlg.hidden) return;
+  if (/^[0-9]$/.test(e.key)) { e.preventDefault(); pinKey(e.key); return; }
+  if (e.key === 'Backspace') { e.preventDefault(); pinBackspace(); return; }
+  if (e.key === 'Escape') { e.preventDefault(); cancelAdminPin(); return; }
+  if (e.key === 'Tab') {
+    const items = [...dlg.querySelectorAll('button:not([disabled])')];
+    if (!items.length) return;
+    const i = items.indexOf(document.activeElement);
+    const next = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : (i === items.length - 1 ? 0 : i + 1);
+    e.preventDefault();
+    items[next].focus();
+  }
+});
+
+// ---------- 管理画面の開閉 ----------
+function openAdminNow() {
+  const a = document.getElementById('admin');
+  if (!a) return;
+  renderAdmin();
+  buildAdmToc();
+  renderAdminPinSection();
+  a.classList.remove('is-detail');
+  a.style.display = '';
+  a.classList.add('open');
+  admTakeSnapshot();
+  admSetDirty(false);
+  admSpy();
+  const close = a.querySelector('.adm-close');
+  if (close) close.focus();
+}
+function closeAdminNow() {
+  const a = document.getElementById('admin');
+  if (!a) return true;
+  if (admEditState.dirty) {
+    if (!confirm('保存していない変更があります。変更を捨てて閉じますか？')) return false;
+    admDiscardChanges({ silent:true });
+  }
+  a.classList.remove('open', 'is-detail');
+  a.style.display = '';
+  return true;
+}
+
+// ---------- 目次（.adm-section から自動生成）----------
+// 節（.adm-sec-body の id）→ グループの対応表。表に無い節は「その他」に入る
+const ADM_GROUPS = [
+  { key:'content', label:'掲示内容', items:[
+    ['sec-policy', '安全衛生方針'], ['sec-org', '組織図'], ['sec-goals', '年間安全目標'],
+    ['sec-plan', '年間 安全衛生計画'], ['sec-months', '月別 安全活動'], ['sec-heat', '熱中症対策'],
+    ['sec-boards', '自由掲示ページ'], ['sec-accident', '事故事例・再発防止策'],
+  ] },
+  { key:'records', label:'点検・記録', items:[
+    ['sec-insp', '設備と点検項目'], ['sec-legal', '法令点検記録'], ['sec-ra', 'リスクアセスメント'],
+    ['sec-qual', '資格・受講予定'], ['sec-training-plan', '年間訓練計画'],
+  ] },
+  { key:'numbers', label:'実績数値', items:[
+    ['sec-stats', '無災害日数・ヒヤリ件数'], ['sec-noaccident', '無災害記録の目標'],
+  ] },
+  { key:'data', label:'データ', items:[
+    ['sec-nm-reports', 'ヒヤリハット受信箱'], ['sec-docs', '安全資料PDF'], ['sec-backup', 'バックアップ・書き出し'],
+  ] },
+  { key:'settings', label:'設定', items:[
+    ['sec-basic', '基本設定・掲示モード・会社カラー'], ['sec-pin', 'PINの設定'],
+  ] },
+];
+function admEsc(v) {
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function admIsPhone() {
+  return !!(window.matchMedia && window.matchMedia('(max-width:599px)').matches);
+}
+function admSectionLabel(sec) {
+  const s = sec.querySelector('.adm-sec-hdr span');
+  return s ? s.textContent.replace(/^[^\p{L}\p{N}]+/u, '').trim() : '';
+}
+function buildAdmToc() {
+  const nav = document.getElementById('adm-toc');
+  const body = document.querySelector('#admin .adm-body');
+  if (!nav || !body) return;
+  const byId = new Map();
+  body.querySelectorAll('.adm-section').forEach(sec => {
+    const b = sec.querySelector('.adm-sec-body[id]');
+    if (b) byId.set(b.id, sec);
+  });
+  const used = new Set();
+  const groups = ADM_GROUPS.map(g => ({
+    key:g.key, label:g.label,
+    items:g.items.filter(([id]) => byId.has(id)).map(([id, label]) => { used.add(id); return { id, label }; }),
+  }));
+  const rest = [...byId.keys()].filter(id => !used.has(id)).map(id => ({ id, label:admSectionLabel(byId.get(id)) }));
+  if (rest.length) groups.push({ key:'other', label:'その他', items:rest });
+  let html = '';
+  groups.forEach(g => {
+    if (!g.items.length) return;
+    // 本文も目次と同じ順・グループに並べる（要素を移動するだけで ID・入力値はそのまま）
+    let wrap = body.querySelector('.adm-group[data-group="' + g.key + '"]');
+    if (!wrap) {
+      wrap = document.createElement('section');
+      wrap.className = 'adm-group';
+      wrap.dataset.group = g.key;
+      wrap.setAttribute('aria-label', g.label);
+      wrap.innerHTML = '<h2 class="adm-group-title">' + admEsc(g.label) + '</h2>';
+      body.appendChild(wrap);
+    }
+    g.items.forEach(it => wrap.appendChild(byId.get(it.id)));
+    html += '<div class="adm-toc-group"><span class="adm-toc-glabel">' + admEsc(g.label) + '</span>' +
+      g.items.map(it => '<button type="button" class="adm-toc-link" data-sec="' + admEsc(it.id) + '" onclick="openAdmSection(\'' + admEsc(it.id) + '\')">' +
+        '<span class="adm-toc-text">' + admEsc(it.label) + '</span><span class="adm-toc-chev" aria-hidden="true">›</span></button>').join('') +
+      '</div>';
+  });
+  nav.innerHTML = html;
+  // 節見出しはキーボードでも開閉できるようにする
+  byId.forEach(sec => {
+    const h = sec.querySelector('.adm-sec-hdr');
+    if (!h) return;
+    const b = h.nextElementSibling;
+    h.setAttribute('role', 'button');
+    h.tabIndex = 0;
+    h.setAttribute('aria-expanded', String(!(b && b.classList.contains('hidden'))));
+  });
+}
+// 目次から節を開く（トグルではなく必ず開く）。PC・タブレットはその節へスクロール、スマホはその節だけを表示
+function openAdmSection(id) {
+  const b = document.getElementById(id);
+  const sec = b && b.closest('.adm-section');
+  const admin = document.getElementById('admin');
+  if (!sec || !admin) return false;
+  const h = sec.querySelector('.adm-sec-hdr');
+  b.classList.remove('hidden');
+  if (h) { h.classList.remove('collapsed'); h.setAttribute('aria-expanded', 'true'); }
+  admSetCurrent(id, true);
+  admin.classList.add('is-detail');
+  const body = admin.querySelector('.adm-body');
+  if (admIsPhone()) {
+    if (body) body.scrollTop = 0;
+    const back = admin.querySelector('.adm-back');
+    if (back) back.focus();
+  } else {
+    sec.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+  return true;
+}
+// スマホ: 節の一覧へ戻る
+function admBackToList() {
+  const admin = document.getElementById('admin');
+  if (!admin) return;
+  admin.classList.remove('is-detail');
+  const cur = admin.querySelector('.adm-toc-link[aria-current="true"]');
+  if (cur) cur.focus();
+}
+// 現在位置の強調。withSection が true なら、スマホで表示する節（is-current）も切り替える
+function admSetCurrent(id, withSection) {
+  const admin = document.getElementById('admin');
+  if (!admin) return;
+  admin.querySelectorAll('.adm-toc-link').forEach(l => {
+    if (l.dataset.sec === id) l.setAttribute('aria-current', 'true');
+    else l.removeAttribute('aria-current');
+  });
+  if (!withSection) return;
+  admin.querySelectorAll('.adm-section').forEach(s => {
+    const b = s.querySelector('.adm-sec-body[id]');
+    s.classList.toggle('is-current', !!b && b.id === id);
+  });
+  admin.querySelectorAll('.adm-group').forEach(g => g.classList.toggle('is-current', !!g.querySelector('.adm-section.is-current')));
+}
+// PC・タブレット: スクロール位置に合わせて目次の現在位置を動かす
+function admSpy() {
+  const body = document.querySelector('#admin .adm-body');
+  if (!body || admIsPhone()) return;
+  const limit = body.getBoundingClientRect().top + 120;
+  let id = '';
+  body.querySelectorAll('.adm-section').forEach(sec => {
+    const b = sec.querySelector('.adm-sec-body[id]');
+    if (!b) return;
+    if (!id || sec.getBoundingClientRect().top <= limit) id = b.id;
+  });
+  if (id) admSetCurrent(id, false);
+}
+
+// ---------- 未保存の変更（固定保存バー）----------
+// 「変更を取り消す」で戻す D のキー（管理画面で編集して saveAll で保存するもの）
+const ADM_EDIT_KEYS = ['coname', 'title', 'logochar', 'slidesec', 'pinPage', 'colorPrimary', 'colorAccent', 'colorGold',
+  'curmonth', 'zerodays', 'zerobase', 'zerodiff', 'trainingPlan', 'trainingAnnualPlan', 'nearmiss', 'nearmissdiff',
+  'nearmisssub', 'noAccidentTarget', 'safetyPromoter', 'accidentCases', 'legalInsp', 'raItems', 'orgChart', 'goals',
+  'months', 'policyCompany', 'policyIntro', 'policyDate', 'policySignee', 'policyItems', 'plan', 'heat', 'boards',
+  'bars', 'inspections', 'qualifications', 'schedules'];
+const admEditState = { dirty:false, snapshot:'' };
+// 保存済みの内容を控える（管理画面を開いたとき・保存したとき）
+function admTakeSnapshot() {
+  if (typeof D !== 'object' || !D) return;
+  const snap = {};
+  ADM_EDIT_KEYS.forEach(k => { if (k in D) snap[k] = D[k]; });
+  admEditState.snapshot = JSON.stringify(snap);
+}
+function admSetDirty(on) {
+  admEditState.dirty = !!on;
+  const bar = document.getElementById('adm-savebar');
+  if (!bar) return;
+  bar.classList.toggle('is-dirty', admEditState.dirty);
+  const st = document.getElementById('adm-savebar-status');
+  if (st) st.textContent = admEditState.dirty ? '未保存の変更があります' : '変更はありません';
+  const discard = document.getElementById('adm-discard-btn');
+  if (discard) discard.disabled = !admEditState.dirty;
+}
+function admDiscardChanges(opts) {
+  if (admEditState.snapshot && typeof D === 'object' && D) {
+    const snap = JSON.parse(admEditState.snapshot);
+    ADM_EDIT_KEYS.forEach(k => { if (k in snap) D[k] = snap[k]; else delete D[k]; });
+  }
+  admSetDirty(false);
+  if (opts && opts.silent) return;
+  renderAdmin();
+  showToast('変更を取り消しました');
+}
+function admMarkDirtyFrom(target) {
+  if (!target || !target.closest) return;
+  if (!target.closest('#admin .adm-body') || target.closest('[data-adm-nodirty]')) return;
+  admSetDirty(true);
+}
+(function initAdminUi() {
+  const admin = document.getElementById('admin');
+  if (!admin) return;
+  admin.addEventListener('input', e => admMarkDirtyFrom(e.target));
+  admin.addEventListener('change', e => admMarkDirtyFrom(e.target));
+  // 行の追加・削除（D を直接変える）も未保存として扱う。再描画で要素が消える前に判定するため capture で受ける
+  admin.addEventListener('click', e => {
+    const el = e.target && e.target.closest ? e.target.closest('[onclick]') : null;
+    if (el && /\b(add|remove|clear)[A-Z]\w*\(/.test(el.getAttribute('onclick') || '')) admMarkDirtyFrom(el);
+  }, true);
+  // 節見出し: Enter / Space で開閉
+  admin.addEventListener('keydown', e => {
+    const h = e.target;
+    if (!h || !h.classList || !h.classList.contains('adm-sec-hdr')) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(h); }
+  });
+  const body = admin.querySelector('.adm-body');
+  if (body) {
+    let queued = false;
+    body.addEventListener('scroll', () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; admSpy(); });
+    }, { passive:true });
+  }
+})();
+
+// ---------- 管理画面の表形式の行（.adm-grid）----------
+// PC・タブレットは --cols で横並び、スマホは1列で各入力の上にラベル
+function admCell(label, inner, extraClass) {
+  return '<div class="adm-cell' + (extraClass ? ' ' + extraClass : '') + '">' +
+    (label ? '<span class="adm-cell-label">' + admEsc(label) + '</span>' : '') + inner + '</div>';
+}
+</script>
 
 <script>
 const holderStateMap = {};
@@ -4220,13 +5040,17 @@ function load() {
       console.log('[FS] Firestore データで画面を更新しました');
     } catch(e) { console.warn('[FS] _applyFS error:', e); }
   }
+  // 読み込みが終わったら FS_MAIN_LOADED を立てる（管理画面の PIN 判定で使う）
+  const _loadFS = () => window.FS.fsLoad().then(_applyFS).finally(() => { window.FS_MAIN_LOADED = true; });
   if (window.FS_READY) {
-    window.FS.fsLoad().then(_applyFS);
+    _loadFS();
   } else {
-    document.addEventListener('fs-ready', () => window.FS.fsLoad().then(_applyFS), { once: true });
+    document.addEventListener('fs-ready', _loadFS, { once: true });
   }
 }
 function persist() {
+  // 管理画面を開いている間は「変更を取り消す」の戻り先を保存した内容にそろえる
+  if (isAdminOpen()) admTakeSnapshot();
   try {
     // 写真・PDFなど大容量データを除外して保存
     const slim = JSON.parse(JSON.stringify(D));
@@ -4621,7 +5445,7 @@ function renderHeatAdm(){
   f('a-heat-updated', H.updated);
   f('a-heat-note', H.note);
   document.getElementById('heat-adm-areas').innerHTML = (H.areas||[]).map((a,i)=>`
-    <div class="heat-adm-row">
+    <div class="adm-grid" style="--cols:2fr 1fr 1fr 1fr auto">
       <div class="adm-field"><label>エリア名</label><input type="text" id="ht-a-name-${i}" value="${planEsc(a.name)}"></div>
       <div class="adm-field"><label>WBGT</label><input type="text" id="ht-a-wbgt-${i}" value="${planEsc(a.wbgt)}"></div>
       <div class="adm-field"><label>気温℃</label><input type="text" id="ht-a-temp-${i}" value="${planEsc(a.temp)}"></div>
@@ -4630,7 +5454,7 @@ function renderHeatAdm(){
     </div>`).join('') +
     '<button class="btn btn-ghost" onclick="addHeatArea()">＋ エリアを追加</button>';
   document.getElementById('heat-adm-reporters').innerHTML = (H.reporters||[]).map((p,i)=>`
-    <div class="heat-adm-row">
+    <div class="adm-grid" style="--cols:1fr 1fr 1fr auto">
       <div class="adm-field"><label>区分</label><input type="text" id="ht-r-role-${i}" value="${planEsc(p.role)}"></div>
       <div class="adm-field"><label>氏名</label><input type="text" id="ht-r-name-${i}" value="${planEsc(p.name)}"></div>
       <div class="adm-field"><label>連絡先</label><input type="text" id="ht-r-tel-${i}" value="${planEsc(p.tel)}"></div>
@@ -4638,7 +5462,7 @@ function renderHeatAdm(){
     </div>`).join('') +
     '<button class="btn btn-ghost" onclick="addHeatReporter()">＋ 報告先を追加</button>';
   document.getElementById('heat-adm-emg').innerHTML = (H.emergency||[]).map((e,i)=>`
-    <div class="heat-adm-row">
+    <div class="adm-grid" style="--cols:1fr 1fr 1fr auto">
       <div class="adm-field"><label>区分</label><input type="text" id="ht-e-label-${i}" value="${planEsc(e.label)}"></div>
       <div class="adm-field"><label>名称</label><input type="text" id="ht-e-name-${i}" value="${planEsc(e.name)}"></div>
       <div class="adm-field"><label>電話番号</label><input type="text" id="ht-e-tel-${i}" value="${planEsc(e.tel)}"></div>
@@ -4678,7 +5502,7 @@ function renderBoardsAdm(){
       </div>
       ${b.poster ? '<div style="font-size:12px;color:var(--sub)">ポスター全面表示ページ（項目欄なし）</div>' : ''}
       ${(b.items||[]).map((it,j)=>`
-      <div class="heat-adm-row">
+      <div class="adm-grid" style="--cols:1fr 1fr 1fr auto">
         <div class="adm-field"><label>項目名</label><input type="text" id="bd-l-${i}-${j}" value="${planEsc(it.label)}"></div>
         <div class="adm-field"><label>内容</label><input type="text" id="bd-t-${i}-${j}" value="${planEsc(it.text)}"></div>
         <div class="adm-field"><label>外国語表記（任意）</label><input type="text" id="bd-v-${i}-${j}" value="${planEsc(it.vi)}"></div>
@@ -5931,18 +6755,18 @@ function renderLegalAdm() {
   const list = document.getElementById('legal-adm-list');
   if(!list) return;
   list.innerHTML = (D.legalInsp||[]).map((r,i)=>`
-    <div style="background:#FFFFFF;border:1px solid rgba(99,102,241,.2);border-radius:6px;padding:14px;margin-bottom:12px">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:10px;align-items:center">
-        <select id="li-equip-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;padding:9px 8px;border-radius:4px;font-family:inherit;outline:none">${equipOpts}</select>
-        <select id="li-type-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;padding:9px 8px;border-radius:4px;font-family:inherit;outline:none">${typeOpts}</select>
-        <input type="date" id="li-date-${i}" value="${r.date||''}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-        <input type="date" id="li-next-${i}" value="${r.nextDate||''}" placeholder="次回予定日" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-        <button class="btn-del" onclick="removeLegalInsp(${i})">削除</button>
+    <div class="adm-card">
+      <div class="adm-grid" style="--cols:2fr 1fr 1fr 1fr auto">
+        ${admCell('設備', `<select id="li-equip-${i}" class="adm-input">${equipOpts}</select>`)}
+        ${admCell('点検の種類', `<select id="li-type-${i}" class="adm-input">${typeOpts}</select>`)}
+        ${admCell('実施日', `<input type="date" id="li-date-${i}" value="${planEsc(r.date||'')}" class="adm-input">`)}
+        ${admCell('次回予定日', `<input type="date" id="li-next-${i}" value="${planEsc(r.nextDate||'')}" class="adm-input">`)}
+        ${admCell('', `<button class="btn-del" onclick="removeLegalInsp(${i})">削除</button>`, 'adm-cell-act')}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-        <input type="text" id="li-inspector-${i}" value="${r.inspector||''}" placeholder="実施者・業者名" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-        <select id="li-result-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;padding:9px 8px;border-radius:4px;font-family:inherit;outline:none">${resOpts}</select>
-        <input type="text" id="li-note-${i}" value="${r.note||''}" placeholder="備考" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
+      <div class="adm-grid" style="--cols:1fr 1fr 1fr">
+        ${admCell('実施者・業者名', `<input type="text" id="li-inspector-${i}" value="${planEsc(r.inspector||'')}" placeholder="実施者・業者名" class="adm-input">`)}
+        ${admCell('結果', `<select id="li-result-${i}" class="adm-input">${resOpts}</select>`)}
+        ${admCell('備考', `<input type="text" id="li-note-${i}" value="${planEsc(r.note||'')}" placeholder="備考" class="adm-input">`)}
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <label style="flex:1;background:rgba(99,102,241,.1);border:1px dashed rgba(99,102,241,.4);border-radius:4px;padding:10px;text-align:center;cursor:pointer;font-size:13px;color:#4338CA">
@@ -6207,23 +7031,16 @@ function renderTrainingPlanAdm() {
   const el = document.getElementById('training-plan-adm-list');
   if (!el) return;
   const plan = D.trainingAnnualPlan || [];
-  el.innerHTML = MO_LABELS_PLAN.map((moLabel, fi) => {
+  el.innerHTML = `<div class="adm-grid adm-grid-head" style="--cols:var(--cols-tp)"><span>月</span><span>訓練内容・テーマ</span><span>分類</span><span>対象者</span></div>` +
+  MO_LABELS_PLAN.map((moLabel, fi) => {
     const p = plan[fi] || {month: MO_NUMS_PLAN[fi], title:'', category:'その他', target:'全員', done:false};
-    return `<div style="display:grid;grid-template-columns:40px 1fr 1fr 80px;gap:8px;align-items:center;
-                margin-bottom:8px;padding:8px 10px;background:rgba(0,0,0,.035);border-radius:6px;
-                border:1px solid rgba(0,0,0,.06);">
-      <div style="font-size:13px;font-weight:700;color:var(--accent)">${moLabel}</div>
-      <input type="text" id="tp-title-${fi}" value="${p.title||''}" placeholder="訓練内容・テーマ"
-        style="background:#EDF1F6;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:14px;
-               padding:7px 10px;border-radius:4px;font-family:inherit;outline:none;">
-      <select id="tp-cat-${fi}"
-        style="background:#EDF1F6;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:14px;
-               padding:7px 10px;border-radius:4px;font-family:inherit;outline:none;">
+    return `<div class="adm-grid has-head adm-grid-row" style="--cols:var(--cols-tp)">
+      <div class="adm-cell adm-cell-month">${moLabel}</div>
+      ${admCell('訓練内容・テーマ', `<input type="text" id="tp-title-${fi}" value="${planEsc(p.title||'')}" placeholder="訓練内容・テーマ" class="adm-input">`)}
+      ${admCell('分類', `<select id="tp-cat-${fi}" class="adm-input">
         ${TR_CATEGORIES.map(ct=>`<option value="${ct}" ${(p.category||'その他')===ct?'selected':''}>${ct}</option>`).join('')}
-      </select>
-      <input type="text" id="tp-target-${fi}" value="${p.target||'全員'}" placeholder="対象者"
-        style="background:#EDF1F6;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;
-               padding:7px 8px;border-radius:4px;font-family:inherit;outline:none;">
+      </select>`)}
+      ${admCell('対象者', `<input type="text" id="tp-target-${fi}" value="${planEsc(p.target||'全員')}" placeholder="対象者" class="adm-input">`)}
     </div>`;
   }).join('');
 }
@@ -6530,10 +7347,10 @@ function renderAdmin() {
 
   document.getElementById('goals-adm-list').innerHTML=D.goals.map((g,i)=>`
     <div class="adm-row" style="border:1px solid rgba(0,0,0,.055);border-radius:6px;padding:14px;margin-bottom:10px">
-      <div class="adm-field" style="min-width:80px;max-width:100px"><label>数値</label><input type="text" id="g-num-${i}" value="${g.num}"></div>
-      <div class="adm-field" style="min-width:60px;max-width:80px"><label>単位</label><input type="text" id="g-unit-${i}" value="${g.unit}"></div>
-      <div class="adm-field"><label>タイトル</label><input type="text" id="g-title-${i}" value="${g.title}"></div>
-      <div class="adm-field" style="flex:2"><label>説明文</label><textarea id="g-desc-${i}" rows="2">${g.desc}</textarea></div>
+      <div class="adm-field" style="min-width:80px;max-width:100px"><label>数値</label><input type="text" id="g-num-${i}" value="${planEsc(g.num)}"></div>
+      <div class="adm-field" style="min-width:60px;max-width:80px"><label>単位</label><input type="text" id="g-unit-${i}" value="${planEsc(g.unit)}"></div>
+      <div class="adm-field"><label>タイトル</label><input type="text" id="g-title-${i}" value="${planEsc(g.titleKey?T(g.titleKey):g.title)}"></div>
+      <div class="adm-field" style="flex:2"><label>説明文</label><textarea id="g-desc-${i}" rows="2">${planEsc(g.descKey?T(g.descKey):g.desc)}</textarea></div>
     </div>`).join('');
 
   const calMonthAdm = idx => ((idx + 3) % 12) + 1;
@@ -6646,11 +7463,10 @@ function renderInspAdm() {
     const makeCpRows = (type, cps) => cps.map((cp,ci)=>`
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
         <span style="font-size:13px;color:var(--sub);min-width:24px">${ci+1}</span>
-        <input type="text" id="ip-${type}-${i}-${ci}" value="${cp}" placeholder="点検項目"
-          style="background:#FFFFFF;border:1px solid rgba(0,0,0,.07);color:#14181F;font-size:15px;padding:6px 8px;border-radius:4px;font-family:inherit;outline:none;flex:1">
+        <input type="text" id="ip-${type}-${i}-${ci}" value="${planEsc(cp)}" placeholder="点検項目" class="adm-input" style="flex:1;min-width:0">
       </div>`).join('');
     const cpHtml = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+      <div class="adm-grid adm-grid-top" style="--cols:1fr 1fr">
         <div>
           <div style="font-size:11px;color:#128A3E;letter-spacing:2px;margin-bottom:6px;font-weight:700">🌅 始業前点検項目</div>
           ${makeCpRows('daily', dailyCps)}
@@ -6665,13 +7481,13 @@ function renderInspAdm() {
     const isAbn = p.status!=='ok';
     return `
     <div style="border:1px solid ${isAbn?'rgba(10,132,255,.3)':'rgba(0,0,0,.055)'};border-radius:6px;padding:14px;margin-bottom:12px;background:#FFFFFF">
-      <div class="insp-adm-row" style="margin-bottom:10px">
-        <input type="text" id="ip-name-${i}" value="${p.name}" placeholder="設備名">
-        <input type="text" id="ip-icon-${i}" value="${p.icon}" placeholder="🔧" style="width:55px">
-        <input type="text" id="ip-prev-${i}" value="${p.prev}" placeholder="2025/01/01">
-        <input type="text" id="ip-next-${i}" value="${p.next}" placeholder="2025/04/01">
-        <select id="ip-st-${i}" onchange="updateInspAbnAdm(${i})">${opts}</select>
-        <button class="btn-del" onclick="removeInsp(${i})">削除</button>
+      <div class="adm-grid has-head" style="--cols:var(--cols-insp)">
+        ${admCell('設備名', `<input type="text" id="ip-name-${i}" value="${planEsc(p.name)}" placeholder="設備名" class="adm-input">`)}
+        ${admCell('アイコン', `<input type="text" id="ip-icon-${i}" value="${planEsc(p.icon)}" placeholder="🔧" class="adm-input">`)}
+        ${admCell('前回点検日', `<input type="text" id="ip-prev-${i}" value="${planEsc(p.prev)}" placeholder="2025/01/01" class="adm-input">`)}
+        ${admCell('次回予定日', `<input type="text" id="ip-next-${i}" value="${planEsc(p.next)}" placeholder="2025/04/01" class="adm-input">`)}
+        ${admCell('ステータス', `<select id="ip-st-${i}" onchange="updateInspAbnAdm(${i})" class="adm-input">${opts}</select>`)}
+        ${admCell('', `<button class="btn-del" onclick="removeInsp(${i})">削除</button>`, 'adm-cell-act')}
       </div>
       <div style="margin-bottom:8px;font-size:14px;color:var(--sub);letter-spacing:2px">▼ 点検チェック項目（5項目）</div>
       ${cpHtml}
@@ -6695,28 +7511,29 @@ function updateInspAbnAdm(i) {
 }
 
 function renderOrgAdm() {
+  const head = `<div class="adm-grid adm-grid-head" style="--cols:var(--cols-org)"><span>階層</span><span>役職</span><span>氏名</span><span>部門</span><span></span></div>`;
   const rows = (D.orgChart||[]).map((o,i)=>`
-    <div style="display:grid;grid-template-columns:80px 2fr 1.5fr 2fr auto;gap:8px;margin-bottom:8px;align-items:center">
-      <select id="org-level-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:13px;padding:9px 6px;border-radius:4px;font-family:inherit;outline:none">
+    <div class="adm-grid has-head" style="--cols:var(--cols-org)">
+      ${admCell('階層', `<select id="org-level-${i}" class="adm-input">
         <option value="0" ${(o.level||0)===0?'selected':''}>Lv0 最上位</option>
         <option value="1" ${(o.level||0)===1?'selected':''}>Lv1 中間</option>
         <option value="2" ${(o.level||0)===2?'selected':''}>Lv2 現場</option>
         <option value="3" ${(o.level||0)===3?'selected':''}>Lv3 その他</option>
-      </select>
-      <input type="text" id="org-role-${i}" value="${o.role}" placeholder="役職名" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-      <select id="org-name-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
+      </select>`)}
+      ${admCell('役職', `<input type="text" id="org-role-${i}" value="${planEsc(o.role)}" placeholder="役職名" class="adm-input">`)}
+      ${admCell('氏名', `<select id="org-name-${i}" class="adm-input">
         <option value="">— 選択 —</option>
         ${(D.reporters||[]).map(r=>`<option value="${r}" ${o.name===r?'selected':''}>${r}</option>`).join('')}
         <option value="${o.name}" ${!(D.reporters||[]).includes(o.name)&&o.name?'selected':''} style="color:var(--sub)">${!(D.reporters||[]).includes(o.name)&&o.name?o.name+'（リスト外）':''}</option>
-      </select>
-      <select id="org-note-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
+      </select>`)}
+      ${admCell('部門', `<select id="org-note-${i}" class="adm-input">
         <option value="">— 部門選択 —</option>
         ${(D.departments||[]).map(d=>`<option value="${d}" ${o.note===d?'selected':''}>${d}</option>`).join('')}
         ${(o.note&&!(D.departments||[]).includes(o.note))?`<option value="${o.note}" selected>${o.note}</option>`:''}
-      </select>
-      <button class="btn-del" onclick="removeOrg(${i})">削除</button>
+      </select>`)}
+      ${admCell('', `<button class="btn-del" onclick="removeOrg(${i})">削除</button>`, 'adm-cell-act')}
     </div>`).join('');
-  document.getElementById('org-adm-list').innerHTML = rows;
+  document.getElementById('org-adm-list').innerHTML = rows ? head + rows : '';
 }
 function saveOrgAdm() {
   (D.orgChart||[]).forEach((_,i)=>{
@@ -6746,18 +7563,16 @@ function renderRaAdm() {
   const reps = [''].concat(D.reporters||[]);
   const repOpts = reps.map(r=>`<option value="${r}">${r||'担当者未定'}</option>`).join('');
   document.getElementById('ra-adm-list').innerHTML=(D.raItems||[]).map((item,i)=>`
-    <div style="background:#FFFFFF;border:1px solid rgba(16,185,129,.15);border-radius:6px;padding:14px;margin-bottom:10px">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center">
-        <input type="text" id="ra-theme-${i}" value="${item.theme}" placeholder="テーマ名（例：プレスライン 作業RA）"
-          style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-        <select id="ra-reporter-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 8px;border-radius:4px;font-family:inherit;outline:none">${repOpts}</select>
-        <input type="date" id="ra-deadline-${i}" value="${item.deadline||''}"
-          style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-        <button class="btn-del" onclick="removeRaItem(${i})">削除</button>
+    <div class="adm-card">
+      <div class="adm-grid" style="--cols:2fr 1fr 1fr auto">
+        ${admCell('テーマ', `<input type="text" id="ra-theme-${i}" value="${planEsc(item.theme)}" placeholder="テーマ名（例：プレスライン 作業RA）" class="adm-input">`)}
+        ${admCell('担当者', `<select id="ra-reporter-${i}" class="adm-input">${repOpts}</select>`)}
+        ${admCell('期限', `<input type="date" id="ra-deadline-${i}" value="${planEsc(item.deadline||'')}" class="adm-input">`)}
+        ${admCell('', `<button class="btn-del" onclick="removeRaItem(${i})">削除</button>`, 'adm-cell-act')}
       </div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <div style="font-size:15px;color:var(--sub)">現在のステップ：</div>
-        <select id="ra-step-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:16px;padding:8px;border-radius:4px;font-family:inherit;outline:none">
+      <div class="adm-inline-row">
+        <label for="ra-step-${i}" style="font-size:15px;color:var(--sub)">現在のステップ：</label>
+        <select id="ra-step-${i}" class="adm-input">
           <option value="0">0 = 未着手</option>
           <option value="1">STEP1 = 危険要因の特定</option>
           <option value="2">STEP2 = リスクの見積もり</option>
@@ -6769,8 +7584,7 @@ function renderRaAdm() {
           <input type="checkbox" id="ra-done-${i}" ${item.done?'checked':''}>
           <span>完了済み</span>
         </label>
-        <input type="text" id="ra-donedate-${i}" value="${item.doneDate||''}" placeholder="完了日 例: 2026/03/15"
-          style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:16px;padding:8px 10px;border-radius:4px;font-family:inherit;outline:none;width:160px">
+        <input type="text" id="ra-donedate-${i}" value="${planEsc(item.doneDate||'')}" placeholder="完了日 例: 2026/03/15" aria-label="完了日" class="adm-input" style="width:200px;max-width:100%">
       </div>
     </div>`).join('');
   (D.raItems||[]).forEach((_,i)=>{
@@ -7096,17 +7910,17 @@ function renderQualAdm() {
     : '';
   const qOpts=`<option value="ok">✓ 有効</option><option value="expiring">▲ 期限間近</option><option value="expired">! 期限切れ</option><option value="no_renewal">∞ 更新不要</option>`;
   document.getElementById('qual-adm-list').innerHTML= reporterWarn +(D.qualifications||[]).map((q,i)=>`
-    <div style="background:#FFFFFF;border:1px solid rgba(0,0,0,.06);border-radius:6px;padding:12px;margin-bottom:10px">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center">
-        <input type="text" id="ql-name-${i}" value="${q.name}" placeholder="資格名" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-        <div id="ql-expiry-wrap-${i}" style="${q.status==='no_renewal'?'display:none':'display:block'}">
+    <div class="adm-card">
+      <div class="adm-grid has-head" style="--cols:var(--cols-qual)">
+        ${admCell('資格名', `<input type="text" id="ql-name-${i}" value="${planEsc(q.name)}" placeholder="資格名" class="adm-input">`)}
+        ${admCell('有効期限', `<div id="ql-expiry-wrap-${i}" style="${q.status==='no_renewal'?'display:none':'display:block'}">
           <input type="date" id="ql-expiry-${i}"
             value="${q.expiry&&q.expiry.match(/\d{4}\/\d{2}\/\d{2}/)?q.expiry.replace(/\//g,'-'):q.expiry&&q.expiry.match(/\d{4}-\d{2}-\d{2}/)?q.expiry:''}"
-            style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none;width:100%">
+            class="adm-input" style="width:100%">
         </div>
-        <div id="ql-expiry-norenewal-${i}" style="${q.status==='no_renewal'?'display:flex':'display:none'};align-items:center;padding:9px 10px;font-size:14px;color:var(--sub);">∞ 更新不要</div>
-        <select id="ql-st-${i}" onchange="toggleExpiryField(${i},this.value)" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:16px;padding:9px 8px;border-radius:4px;font-family:inherit;outline:none">${qOpts}</select>
-        <button class="btn-del" onclick="removeQual(${i})">削除</button>
+        <div id="ql-expiry-norenewal-${i}" style="${q.status==='no_renewal'?'display:flex':'display:none'};align-items:center;min-height:48px;padding:0 10px;font-size:16px;color:var(--sub);">∞ 更新不要</div>`)}
+        ${admCell('状態', `<select id="ql-st-${i}" onchange="toggleExpiryField(${i},this.value)" class="adm-input">${qOpts}</select>`)}
+        ${admCell('', `<button class="btn-del" onclick="removeQual(${i})">削除</button>`, 'adm-cell-act')}
       </div>
       <div>
         <div style="font-size:13px;color:var(--sub);letter-spacing:1px;margin-bottom:6px">✅ 保有者（従業員リストから選択）</div>
@@ -7119,12 +7933,12 @@ function renderQualAdm() {
 
   const sOpts=`<option value="planned">📅 受講予定</option><option value="ongoing">📖 受講中</option>`;
   document.getElementById('sched-adm-list').innerHTML=(D.schedules||[]).map((s,i)=>`
-    <div style="background:#FFFFFF;border:1px solid rgba(0,0,0,.06);border-radius:6px;padding:12px;margin-bottom:10px">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center">
-        <input type="text" id="sc-qual-${i}" value="${s.qual}" placeholder="資格名" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-        <input type="text" id="sc-date-${i}" value="${s.date}" placeholder="2026/06/01" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:17px;padding:9px 10px;border-radius:4px;font-family:inherit;outline:none">
-        <select id="sc-st-${i}" style="background:#FFFFFF;border:1px solid rgba(0,0,0,.10);color:#14181F;font-size:16px;padding:9px 8px;border-radius:4px;font-family:inherit;outline:none">${sOpts}</select>
-        <button class="btn-del" onclick="removeSched(${i})">削除</button>
+    <div class="adm-card">
+      <div class="adm-grid has-head" style="--cols:var(--cols-qual)">
+        ${admCell('資格名', `<input type="text" id="sc-qual-${i}" value="${planEsc(s.qual)}" placeholder="資格名" class="adm-input">`)}
+        ${admCell('予定日', `<input type="text" id="sc-date-${i}" value="${planEsc(s.date)}" placeholder="2026/06/01" class="adm-input">`)}
+        ${admCell('状態', `<select id="sc-st-${i}" class="adm-input">${sOpts}</select>`)}
+        ${admCell('', `<button class="btn-del" onclick="removeSched(${i})">削除</button>`, 'adm-cell-act')}
       </div>
       <div>
         <div style="font-size:13px;color:var(--sub);letter-spacing:1px;margin-bottom:6px">✅ 受講予定者（従業員リストから選択）</div>
@@ -7275,12 +8089,18 @@ function saveAll() {
   D.reporters=(document.getElementById('a-reporters')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
   D.departments=(document.getElementById('a-departments')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
 
-  D.goals=D.goals.map((_,i)=>({
-    num:document.getElementById(`g-num-${i}`).value,
-    unit:document.getElementById(`g-unit-${i}`).value,
-    title:document.getElementById(`g-title-${i}`).value,
-    desc:document.getElementById(`g-desc-${i}`).value
-  }));
+  D.goals=D.goals.map((g,i)=>{
+    const o={
+      num:document.getElementById(`g-num-${i}`).value,
+      unit:document.getElementById(`g-unit-${i}`).value,
+      title:document.getElementById(`g-title-${i}`).value,
+      desc:document.getElementById(`g-desc-${i}`).value
+    };
+    // 翻訳キーの文のまま変えていなければキーを残す（日本語・ベトナム語の切り替えを保つ）
+    if(g.titleKey && o.title===T(g.titleKey)) o.titleKey=g.titleKey;
+    if(g.descKey && o.desc===T(g.descKey)) o.descKey=g.descKey;
+    return o;
+  });
   D.months=D.months.map((_,i)=>({act:document.getElementById(`m-act-${i}`).value}));
   collectPolicyAdm();
   collectPlanAdm();
@@ -7323,6 +8143,7 @@ function saveAll() {
   aiCache=null; aiLastFetch=0;
 
   persist(); applyColors(); renderDisplay(); showToast();
+  admSetDirty(false);
   // 固定ページが設定されていればPIN適用、なければスライドショー再開
   isPinned = false; if(isKiosk()) applyPinPage(); resetSlideTimer();
   } catch(e) { alert('saveAllエラー: ' + e.message); console.error(e); }
@@ -7335,16 +8156,20 @@ function exportData() {
 function importData(evt) {
   const f=evt.target.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=e=>{ try{ D=JSON.parse(e.target.result); persist(); applyColors(); renderDisplay(); renderAdmin(); aiCache=null; showToast(); }catch(err){alert('読み込みに失敗しました');} };
+  r.onload=e=>{ try{ const keepPin=D.adminPin; D=JSON.parse(e.target.result); if(keepPin!==undefined) D.adminPin=keepPin; persist(); applyColors(); renderDisplay(); renderAdmin(); admSetDirty(false); aiCache=null; showToast(); }catch(err){ console.warn('[import] 読み込み失敗', err); alert('読み込みに失敗しました');} };
   r.readAsText(f);
 }
 
-function openAdmin() {
-  renderAdmin();
-  document.getElementById('admin').style.display = 'block';
+// 管理画面を開く（PIN が設定されていれば先に PIN を聞く。本体は admin-ui-js の openAdminNow）
+function openAdmin() { return requireAdminPin(openAdminNow); }
+// 閉じる（未保存の変更があれば確認する。admin-ui-js の closeAdminNow）
+function closeAdmin() { return closeAdminNow(); }
+function toggleSection(hdr) {
+  hdr.classList.toggle('collapsed');
+  const body = hdr.nextElementSibling;
+  body.classList.toggle('hidden');
+  hdr.setAttribute('aria-expanded', String(!body.classList.contains('hidden')));
 }
-function closeAdmin() { document.getElementById('admin').style.display = 'none'; }
-function toggleSection(hdr) { hdr.classList.toggle('collapsed'); hdr.nextElementSibling.classList.toggle('hidden'); }
 
 
 
