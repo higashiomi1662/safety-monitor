@@ -421,3 +421,176 @@ describe('月次点検ページ', () => {
     expect(doc.getElementById('d-monthly-insp').innerHTML).not.toMatch(SMALL_FONT)
   })
 })
+
+// ===================== 巡視・RA・法令・事故事例・熱中症・無災害・自由掲示 =====================
+const patrolReports = [
+  { date: '2026-10-01', reporter: '山田 太郎', area: '第一工場', overall: '概ね良好', items: [
+    { category: '通路', item: '通路に資材', result: 'ng', resolved: true, improvementDate: '2026-10-03', improvementContent: '撤去した' },
+  ] },
+  { date: '2026-10-14', reporter: '佐藤 花子', area: '第二倉庫', overall: '要改善あり', items: [
+    { category: '通路', item: '通路に資材が置かれている', result: 'ng', resolved: false, comment: '台車' },
+    { category: '消火', item: '消火器', result: 'ok' },
+  ] },
+]
+// 通常表示のページに必要なデータを一通り入れて描画する
+const renderAllPages = (win) => {
+  win.D.patrolReports = patrolReports
+  win.D.inspections = inspections()
+  win.D.legalInsp = [
+    { equipName: 'クレーン①', type: 'yearly', date: '2025-10-01', nextDate: '2026-10-01', result: 'fail', inspector: '外部業者', note: 'ワイヤー交換' },
+  ]
+  win.D.raItems = [
+    { theme: 'レーザー加工 RA', reporter: 'A', deadline: '2026/10/01', step: 2, done: false, doneDate: '' },
+    { theme: '溶接 RA', reporter: 'B', deadline: '2026/10/30', step: 1, done: false, doneDate: '' },
+    { theme: 'プレス RA', reporter: 'C', deadline: '2026/09/01', step: 5, done: true, doneDate: '2026/08/20' },
+  ]
+  win.D.heat.reporters = [{ role: '第一報', name: '班長', tel: '090-1234-5678' }, { role: '推進者', name: '', tel: '' }]
+  win.D.heat.emergency = [{ label: '救急', name: '消防（救急車）', tel: '119' }, { label: '搬送先', name: '', tel: '' }]
+  win.D.heat.areas = [{ name: '溶接エリア', wbgt: '29', temp: '33', humid: '60' }]
+  setQualData(win)
+  win.renderDisplay()
+  win.renderDailyList()
+  win.renderMonthlyInsp()
+  win.renderPatrolSlide()
+  win.renderLegalSlide()
+  win.selectLegalEquip('クレーン①')
+  win.renderNMAnalysis()
+}
+
+describe('熱中症対策ページ', () => {
+  it('電話番号は tel: リンクにする（未設定はリンクにしない）', () => {
+    app = loadApp()
+    const { win, doc } = app
+    renderAllPages(win)
+    const a1 = doc.querySelector('#d-heat-reporters a[href^="tel:"]')
+    expect(a1.getAttribute('href')).toBe('tel:09012345678')
+    expect(a1.textContent).toBe('090-1234-5678')
+    expect(doc.querySelectorAll('#d-heat-reporters a').length).toBe(1)
+    const a2 = doc.querySelector('#d-heat-emergency a[href^="tel:"]')
+    expect(a2.getAttribute('href')).toBe('tel:119')
+    expect(doc.querySelectorAll('#d-heat-emergency a').length).toBe(1)
+    expect(doc.querySelectorAll('#d-heat-emergency .he-t')[1].textContent).toBe('—')
+  })
+})
+
+describe('事故事例ページ', () => {
+  it('事例タブはクラスで状態を表し、選択中は aria-selected', () => {
+    app = loadApp()
+    const { win, doc } = app
+    win.D.accidentCases = [
+      { date: '2025/04/01', type: '挟まれ', location: 'A', desc: '事例1', prevention: ['対策1'] },
+      { date: '2025/05/01', type: '転倒', location: 'B', desc: '事例2', prevention: ['対策2'] },
+    ]
+    win.renderDisplay()
+    const tabs = [...doc.querySelectorAll('#d-acc-tabs .acc-tab')]
+    expect(tabs.length).toBe(2)
+    expect(tabs.every((t) => !t.getAttribute('style'))).toBe(true)
+    expect(tabs.map((t) => t.getAttribute('aria-selected'))).toEqual(['true', 'false'])
+    win.selectAccCase(1)
+    expect(tabs.map((t) => t.classList.contains('is-active'))).toEqual([false, true])
+    expect(tabs.map((t) => t.getAttribute('aria-selected'))).toEqual(['false', 'true'])
+    expect(doc.getElementById('d-acc-desc').textContent).toBe('事例2')
+    const css = doc.getElementById('ui-pages').textContent
+    expect(css).toMatch(/body\.mode-app[^{]*\.acc-tab\{[^}]*min-height:var\(--tap\)/)
+  })
+})
+
+describe('安全巡視ページ', () => {
+  it('改善報告ボタンは押しやすい大きさのクラス、状態の色はトークン', () => {
+    app = loadApp()
+    const { win, doc } = app
+    renderAllPages(win)
+    const btn = doc.querySelector('#patrol-latest-content .plt-improve-btn')
+    expect(btn.getAttribute('onclick')).toBe('openImprovementModal(1,0)')
+    expect(btn.getAttribute('style')).toBeNull()
+    expect(doc.getElementById('ps-issues').style.color).toBe('var(--c-warn)')
+    expect(doc.getElementById('ps-resolved').style.color).toBe('var(--c-ok)')
+    const html = doc.getElementById('slide-patrol').innerHTML
+    expect(html).not.toMatch(SMALL_FONT)
+    expect(html).not.toMatch(/#128A3E|var\(--gold\)/)
+    expect([...doc.querySelectorAll('#patrol-hist-list .patrol-issue-tag')].map((t) => t.className)).toEqual([
+      'patrol-issue-tag', 'patrol-issue-tag ok',
+    ])
+  })
+})
+
+describe('状態の色の統一（危険＝赤）', () => {
+  it('リスクアセスメント・無災害記録・年間目標で青（--accent）や --gold を危険・注意の意味に使わない', () => {
+    app = loadApp({ now: '2026-10-16T09:00:00+09:00' })
+    const { win, doc } = app
+    renderAllPages(win)
+    const ra = doc.getElementById('d-ra-list').innerHTML + doc.getElementById('d-ra-overview').innerHTML + doc.getElementById('d-ra-steps').innerHTML
+    expect(ra).not.toMatch(/var\(--accent\)|var\(--gold\)|#128A3E/)
+    expect(ra).toMatch(/var\(--c-danger\)/) // 期限超過
+    expect(ra).toMatch(/var\(--c-warn\)/) // 残り30日以内
+    expect(doc.getElementById('d-stats').innerHTML).not.toMatch(/var\(--accent\)|var\(--gold\)|#128A3E/)
+    expect(doc.getElementById('d-goals').innerHTML).not.toMatch(/var\(--accent\)|var\(--gold\)|#128A3E/)
+  })
+
+  it('法令点検の「不合格・期限超過」を赤にする CSS がある', () => {
+    app = loadApp()
+    const css = app.doc.getElementById('ui-pages').textContent
+    expect(css).toMatch(/\.legal-fail[^{]*\{[^}]*var\(--c-danger\)/)
+    expect(css).toMatch(/\.legal-equip-card\.overdue[^{]*\{[^}]*var\(--c-danger\)/)
+    expect(css).toMatch(/\.ic-legal-over[^{]*\{[^}]*var\(--c-danger\)/)
+  })
+})
+
+describe('通常表示で 12px 未満の文字を使わない', () => {
+  it('ページの生成 HTML にインラインの font-size:9〜11px が残っていない', () => {
+    app = loadApp({ width: 390 })
+    const { win, doc } = app
+    renderAllPages(win)
+    const offenders = [...doc.querySelectorAll('#slides [style]')]
+      .filter((el) => !el.closest('.kiosk-only') && SMALL_FONT.test(el.getAttribute('style')))
+      .map((el) => `${el.closest('.slide')?.id}: ${el.outerHTML.slice(0, 80)}`)
+    expect(offenders).toEqual([])
+  })
+
+  it('12px 未満を指定している CSS は、通常表示用の上書きがある', () => {
+    app = loadApp({ width: 390 })
+    const { win, doc } = app
+    renderAllPages(win)
+    // px か clamp() の最小値で 12px 未満を指定しているルール
+    const smallPx = (v) => {
+      const m = /^(?:clamp\()?\s*(\d+(?:\.\d+)?)px/.exec(v || '')
+      return m && Number(m[1]) < 12
+    }
+    const okSize = (v) => /^var\(--fs-(xs|sm|md|lg|xl)\)$/.test(v) || (/^\d+px$/.test(v) && parseInt(v, 10) >= 12)
+    const rules = []
+    const walk = (list, sheetId) => {
+      for (const r of list) {
+        if (r.cssRules && r.media) {
+          if (!/print/.test(r.media.mediaText)) walk(r.cssRules, sheetId)
+        } else if (r.selectorText && r.style) {
+          rules.push({ sel: r.selectorText, size: r.style.getPropertyValue('font-size').trim(), sheetId })
+        }
+      }
+    }
+    for (const st of doc.querySelectorAll("style")) if (st.sheet) walk(st.sheet.cssRules, st.id)
+    const matches = (el, sel) =>
+      sel.split(',').some((part) => {
+        try {
+          return el.matches(part.trim())
+        } catch (e) {
+          // ::before などの疑似要素を含むセレクタは要素に一致しない
+          return e instanceof win.DOMException ? false : Promise.reject(e)
+        }
+      })
+    const overrides = rules.filter((r) => (r.sheetId === 'ui-pages' || r.sheetId === 'app-ui') && /^body\.mode-app/.test(r.sel) && okSize(r.size))
+    const offenders = []
+    for (const r of rules.filter((x) => smallPx(x.size) && x.sheetId !== 'ui-pages' && x.sheetId !== 'app-ui')) {
+      const els = [...doc.querySelectorAll('#slides *')].filter((el) => !el.closest('.kiosk-only, #qual-scroll-hint') && matches(el, r.sel))
+      for (const el of els) {
+        if (!overrides.some((o) => matches(el, o.sel))) offenders.push(`${r.sel} (${r.size}) → ${el.className || el.tagName}`)
+      }
+    }
+    expect([...new Set(offenders)]).toEqual([])
+  })
+
+  it('WBGT の数値の単位（em 指定で小さくなる）も 12px 以上にする', () => {
+    app = loadApp()
+    const css = app.doc.getElementById('ui-pages').textContent
+    expect(css).toMatch(/body\.mode-app #slides \.heat-area \.ha-val small\{[^}]*font-size:var\(--fs-xs\)/)
+  })
+})

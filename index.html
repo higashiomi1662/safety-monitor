@@ -1692,6 +1692,70 @@ body.mode-app #slides .daily-item .ic-action{ grid-column:1 / -1; }
 /* 月初のお知らせ・進捗 */
 body.mode-app #slides #monthly-announce-banner{ border-radius:var(--r-lg); }
 body.mode-app #slides #monthly-progress-bar{ min-width:2px; }
+
+/* ---------- 事故事例：事例タブ（掲示モードは旧インライン指定と同じ見た目） ---------- */
+.acc-tab{
+  padding:5px 16px; border-radius:4px; border:1px solid rgba(10,132,255,.4);
+  background:rgba(0,0,0,.05); color:var(--sub); cursor:pointer; font-size:16px; font-family:inherit; font-weight:400;
+}
+.acc-tab.is-active{ background:rgba(10,132,255,.2); color:#0B63CE; font-weight:700; }
+body.mode-app .acc-tab{
+  min-height:var(--tap); padding:0 20px; border-radius:var(--r-pill); border:1px solid var(--c-field-line);
+  background:var(--c-surface); color:var(--c-ink);
+}
+body.mode-app .acc-tab.is-active{ background:var(--c-info); border-color:var(--c-info); color:#fff; }
+body.mode-app #d-acc-tabs{ flex-wrap:wrap; }
+body.mode-app #slides .acc-tag{ border-radius:var(--r-pill); }
+
+/* ---------- 安全巡視 ---------- */
+.patrol-box-title{ font-size:11px; letter-spacing:2px; color:var(--sub); margin-bottom:10px; border-bottom:1px solid rgba(0,0,0,.06); padding-bottom:8px; }
+.patrol-sub{ font-size:11px; color:var(--sub); }
+.patrol-done-title{ font-size:11px; color:#128A3E; font-weight:700; margin-bottom:4px; }
+.plt-improve-btn{
+  margin-top:5px; background:rgba(48,209,88,.12); border:1px solid rgba(48,209,88,.3); color:#128A3E;
+  font-size:12px; font-weight:700; padding:5px 12px; border-radius:4px; cursor:pointer; font-family:inherit;
+}
+body.mode-app #slides .patrol-box-title{ font-size:var(--fs-sm); font-weight:700; letter-spacing:0; color:var(--c-sub); border-color:var(--c-line-soft); }
+body.mode-app #slides .patrol-sub, body.mode-app #slides .patrol-hist-meta{ font-size:var(--fs-sm); color:var(--c-sub); }
+body.mode-app #slides .plt-section-title{ font-size:var(--fs-sm); letter-spacing:0; font-weight:700; color:var(--c-sub); }
+body.mode-app #slides .patrol-done-title{ font-size:var(--fs-sm); color:var(--c-ok); }
+body.mode-app #slides .plt-chk-item{ font-size:15px; padding:var(--sp-2) 0; }
+body.mode-app #slides .plt-chk-badge{ width:24px; height:24px; }
+body.mode-app #slides .plt-chk-badge.ng{ background:var(--c-danger-bg); color:var(--c-danger); }
+body.mode-app #slides .plt-chk-badge.ok{ background:var(--c-ok-bg); color:var(--c-ok); }
+body.mode-app #slides .plt-improve-btn{
+  min-height:var(--tap); padding:0 var(--sp-4); margin-top:var(--sp-2); border-radius:var(--r-md);
+  background:var(--c-surface); border:2px solid var(--c-info); color:var(--c-info); font-size:var(--fs-sm);
+}
+body.mode-app #slides .patrol-issue-tag{ background:var(--c-warn-bg); color:var(--c-warn-text); border-radius:var(--r-pill); padding:2px 10px; }
+body.mode-app #slides .patrol-issue-tag.ok{ background:var(--c-ok-bg); color:var(--c-ok); }
+body.mode-app #slides .patrol-stat-bar{ flex-wrap:wrap; }
+body.mode-app #slides .patrol-stat-item{ flex:1 1 120px; background:var(--c-surface); border:1px solid var(--c-line); border-radius:var(--r-lg); }
+body.mode-app #slides .patrol-stat-lbl{ font-size:var(--fs-sm); letter-spacing:0; }
+body.mode-app #slides .patrol-latest, body.mode-app #slides .patrol-hist{ background:var(--c-surface) !important; border:1px solid var(--c-line); border-radius:var(--r-lg); }
+
+/* ---------- 法令点検：不合格・期限超過は赤（両モード共通。以前は青だった） ---------- */
+.legal-fail{ background:var(--c-danger-bg); color:var(--c-danger); border:1px solid var(--c-danger-line); }
+.legal-equip-card.overdue{ border-left-color:var(--c-danger); }
+.legal-meta-item.overdue span{ color:var(--c-danger); }
+.ic-legal-over{ background:var(--c-danger-bg); color:var(--c-danger); }
+body.mode-app #slides .legal-equip-card{ min-height:var(--tap); cursor:pointer; }
+body.mode-app #slides .legal-meta-item{ font-size:var(--fs-sm); }
+body.mode-app .fork-btn{
+  min-height:var(--tap); min-width:var(--tap); box-sizing:border-box;
+  padding:12px 14px !important; font-size:var(--fs-sm) !important; border-radius:var(--r-md) !important;
+}
+
+/* ---------- 熱中症対策：電話番号は押して発信できるリンク ---------- */
+.tel-link{ color:inherit; text-decoration:none; }
+body.mode-app #slides .tel-link{ display:inline-flex; align-items:center; min-height:var(--tap); text-decoration:underline; text-underline-offset:3px; }
+body.mode-app #slides .heat-sub, body.mode-app #slides .heat-emg-row .he-l, body.mode-app #slides .heat-area .ha-name{ font-size:var(--fs-sm); letter-spacing:0; }
+body.mode-app #slides .heat-area .ha-val small{ font-size:var(--fs-xs); }
+body.mode-app #slides .heat-person .hp-role{ font-size:var(--fs-xs); }
+
+/* ---------- 無災害記録・自由掲示 ---------- */
+body.mode-app #slides .norec-title em{ font-size:var(--fs-xs); letter-spacing:1px; }
+body.mode-app #slides .board-note{ font-size:var(--fs-sm); }
 </style>
 <style id="app-ui">
 /* ===================================================================
@@ -2441,16 +2505,16 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
                 <div id="fork-plan-pdf-box" style="background:rgba(48,209,88,.06);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:10px 12px;flex-shrink:0">
                   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
                     <div>
-                      <div style="font-size:12px;font-weight:700;color:#128A3E;letter-spacing:1px;">🚜 フォークリフト作業計画書</div>
-                      <div id="fork-plan-pdf-name" style="font-size:11px;color:var(--sub);margin-top:2px;">PDF未登録</div>
+                      <div style="font-size:12px;font-weight:700;color:var(--c-ok);letter-spacing:1px;">🚜 フォークリフト作業計画書</div>
+                      <div id="fork-plan-pdf-name" style="font-size:12px;color:var(--sub);margin-top:2px;">PDF未登録</div>
                     </div>
                     <div style="display:flex;gap:6px;align-items:center">
-                      <label style="background:rgba(48,209,88,.15);border:1px solid rgba(48,209,88,.3);color:#128A3E;padding:5px 12px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">
+                      <label class="fork-btn" style="background:rgba(48,209,88,.15);border:1px solid rgba(48,209,88,.3);color:var(--c-ok);padding:5px 12px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">
                         📁 登録
                         <input type="file" accept="application/pdf,image/*" style="display:none" onchange="handleForkPlanPdf(event)">
                       </label>
-                      <button id="fork-plan-pdf-view-btn" onclick="viewForkPlanPdf()" style="display:none;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);color:#4338CA;padding:5px 12px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">📄 閲覧</button>
-                      <button id="fork-plan-pdf-del-btn" onclick="deleteForkPlanPdf()" style="display:none;background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.2);color:#D42B1C;padding:5px 10px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit">✕</button>
+                      <button type="button" class="fork-btn" id="fork-plan-pdf-view-btn" onclick="viewForkPlanPdf()" aria-label="作業計画書を閲覧" style="display:none;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);color:#4338CA;padding:5px 12px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">📄 閲覧</button>
+                      <button type="button" class="fork-btn" id="fork-plan-pdf-del-btn" onclick="deleteForkPlanPdf()" aria-label="作業計画書を削除" style="display:none;background:rgba(255,69,58,.1);border:1px solid rgba(255,69,58,.2);color:#D42B1C;padding:5px 10px;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit">✕</button>
                     </div>
                   </div>
                 </div>
@@ -2527,18 +2591,18 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
           <section class="slide" id="slide-patrol">
             <div class="s-title">安全巡視 記録<span class="s-sub">MONTHLY SAFETY PATROL RECORDS</span></div>
             <div class="patrol-stat-bar">
-              <div class="patrol-stat-item"><div class="patrol-stat-num" id="ps-total" style="color:var(--accent)">0</div><div class="patrol-stat-lbl">実施回数</div></div>
-              <div class="patrol-stat-item"><div class="patrol-stat-num" id="ps-issues" style="color:var(--gold)">0</div><div class="patrol-stat-lbl">指摘件数</div></div>
-              <div class="patrol-stat-item"><div class="patrol-stat-num" id="ps-resolved" style="color:#128A3E">0</div><div class="patrol-stat-lbl">改善済み</div></div>
-              <div class="patrol-stat-item"><div class="patrol-stat-num" id="ps-good" style="color:#128A3E">0</div><div class="patrol-stat-lbl">良好項目</div></div>
+              <div class="patrol-stat-item"><div class="patrol-stat-num" id="ps-total" style="color:var(--c-info)">0</div><div class="patrol-stat-lbl">実施回数</div></div>
+              <div class="patrol-stat-item"><div class="patrol-stat-num" id="ps-issues" style="color:var(--c-warn)">0</div><div class="patrol-stat-lbl">指摘件数</div></div>
+              <div class="patrol-stat-item"><div class="patrol-stat-num" id="ps-resolved" style="color:var(--c-ok)">0</div><div class="patrol-stat-lbl">改善済み</div></div>
+              <div class="patrol-stat-item"><div class="patrol-stat-num" id="ps-good" style="color:var(--c-ok)">0</div><div class="patrol-stat-lbl">良好項目</div></div>
             </div>
             <div class="patrol-layout">
               <div class="patrol-latest" id="patrol-latest-box">
-                <div style="font-size:11px;letter-spacing:2px;color:var(--sub);margin-bottom:10px;border-bottom:1px solid rgba(0,0,0,.06);padding-bottom:8px;">📅 最新の巡視結果</div>
+                <div class="patrol-box-title">📅 最新の巡視結果</div>
                 <div id="patrol-latest-content" style="color:var(--sub);font-size:13px;">巡視記録がありません</div>
               </div>
               <div class="patrol-hist">
-                <div style="font-size:11px;letter-spacing:2px;color:var(--sub);margin-bottom:10px;border-bottom:1px solid rgba(0,0,0,.06);padding-bottom:8px;">📋 巡視履歴</div>
+                <div class="patrol-box-title">📋 巡視履歴</div>
                 <div id="patrol-hist-list" style="color:var(--sub);font-size:13px;">記録なし</div>
               </div>
             </div>
@@ -2601,7 +2665,7 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
             <!-- 事例内容 -->
             <div class="accident-layout">
               <div class="accident-case-card">
-                <div style="font-size:15px;font-weight:700;color:var(--accent);letter-spacing:3px">⚠ 発生事例</div>
+                <div style="font-size:15px;font-weight:700;color:var(--c-danger);letter-spacing:3px">⚠ 発生事例</div>
                 <div class="accident-meta" id="d-acc-meta"></div>
                 <div class="accident-desc" id="d-acc-desc">データなし</div>
               </div>
@@ -4527,6 +4591,13 @@ function wbgtLevel(v){
   if(n >= 21) return {i:1, t:'注意'};
   return {i:0, t:'ほぼ安全'};
 }
+// 電話番号を tel: リンクにする（数字が無ければ文字のまま）
+function telLink(tel, fallback) {
+  const t = String(tel || '').trim();
+  const digits = t.replace(/[^0-9+]/g, '');
+  if (!digits) return planEsc(t || fallback || '');
+  return '<a class="tel-link" href="tel:' + digits + '">' + planEsc(t) + '</a>';
+}
 function renderHeat(){
   const root = document.getElementById('d-heat-triggers'); if(!root) return;
   const H = D.heat || {};
@@ -4538,11 +4609,11 @@ function renderHeat(){
     '<div class="heat-person"><div class="hp-ord">' + (i+1) + '</div>' +
     '<div><span class="hp-role">' + planEsc(p.role) + '</span>' +
     '<span class="hp-name">' + planEsc(p.name || '（未設定）') + '</span></div>' +
-    '<div class="hp-tel">' + planEsc(p.tel || '') + '</div></div>').join('');
+    '<div class="hp-tel">' + telLink(p.tel, '') + '</div></div>').join('');
   document.getElementById('d-heat-emergency').innerHTML = (H.emergency||[]).map(e =>
     '<div class="heat-emg-row"><span class="he-l">' + planEsc(e.label) + '</span>' +
     '<span class="he-n">' + planEsc(e.name || '（未設定）') + '</span>' +
-    '<span class="he-t">' + planEsc(e.tel || '—') + '</span></div>').join('');
+    '<span class="he-t">' + telLink(e.tel, '—') + '</span></div>').join('');
   document.getElementById('d-heat-areas').innerHTML = (H.areas||[]).map(a => {
     const lv = wbgtLevel(a.wbgt);
     const sub = [a.temp ? '気温 ' + a.temp + '℃' : '', a.humid ? '湿度 ' + a.humid + '%' : ''].filter(Boolean).join('　');
@@ -4921,13 +4992,13 @@ function renderDisplay() {
   });
   const trainedCount   = trainedSet.size;
   const pctTrained     = totalPeople > 0 ? Math.round(trainedCount / totalPeople * 100) : 0;
-  const goalPctColor   = pctTrained >= 100 ? '#128A3E' : pctTrained >= 70 ? 'var(--gold)' : 'var(--accent)';
+  const goalPctColor   = TONE_COLOR[rateLevel(pctTrained, 100, 70)];
   const untrainedNames = reporters.filter(r => !trainedSet.has(r));
 
   document.getElementById('d-goals').innerHTML = D.goals.map((g, gi) => {
     // 3枚目カード（教育受講）に受講率を追加
     if(gi === 2 && totalPeople > 0) {
-      return `<div class="goal-card" style="border-top-color:#128A3E">
+      return `<div class="goal-card" style="border-top-color:var(--c-ok)">
         <div class="goal-num" style="color:${goalPctColor}">${pctTrained}<sup> %</sup></div>
         <div class="goal-title">${g.titleKey?T(g.titleKey):g.title}</div>
         <div style="width:100%;margin-top:4px">
@@ -4940,7 +5011,7 @@ function renderDisplay() {
           </div>
           ${untrainedNames.length > 0
             ? `<div style="margin-top:8px;font-size:14px;color:var(--sub)">未受講: ${untrainedNames.map(n=>n.split(' ')[0]).join('・')}</div>`
-            : '<div style="margin-top:8px;font-size:14px;color:#128A3E">'+T('allDone')+'</div>'}
+            : '<div style="margin-top:8px;font-size:14px;color:var(--c-ok)">'+T('allDone')+'</div>'}
         </div>
         <div class="goal-desc">${g.descKey?T(g.descKey):g.desc}</div>
       </div>`;
@@ -4967,7 +5038,7 @@ function renderDisplay() {
   const syncOk = actualNMCount === D.nearmiss;
   const target = D.noAccidentTarget || 1000;
   const pct = Math.min(Math.round(zeroDays()/target*100),100);
-  const pctColor = pct>=80?'#128A3E':pct>=50?'var(--gold)':'var(--accent)';
+  const pctColor = pct >= 80 ? TONE_COLOR.ok : TONE_COLOR.info;
   const maxB=Math.max(...D.bars.map(b=>b.val),1);
   document.getElementById('d-stats').innerHTML=`
     <div class="stat-big norec">
@@ -5070,9 +5141,9 @@ function renderDisplay() {
 
   if(document.getElementById('d-ra-overview')) {
     document.getElementById('d-ra-overview').innerHTML =
-      '<div class="ra-ov-box"><div class="ra-ov-n" style="color:#128A3E">'+raDone+'</div><div class="ra-ov-l">'+T('raDone')+'</div></div>'
-      +'<div class="ra-ov-box"><div class="ra-ov-n" style="color:var(--gold)">'+raActive+'</div><div class="ra-ov-l">'+T('raActive')+'</div></div>'
-      +'<div class="ra-ov-box"><div class="ra-ov-n" style="color:rgba(0,0,0,.45)">'+raPending+'</div><div class="ra-ov-l">'+T('raPending')+'</div></div>';
+      '<div class="ra-ov-box"><div class="ra-ov-n" style="color:'+TONE_COLOR.ok+'">'+raDone+'</div><div class="ra-ov-l">'+T('raDone')+'</div></div>'
+      +'<div class="ra-ov-box"><div class="ra-ov-n" style="color:'+TONE_COLOR.info+'">'+raActive+'</div><div class="ra-ov-l">'+T('raActive')+'</div></div>'
+      +'<div class="ra-ov-box"><div class="ra-ov-n" style="color:'+TONE_COLOR.neutral+'">'+raPending+'</div><div class="ra-ov-l">'+T('raPending')+'</div></div>';
 
     // テーマ別カード（担当・期限・残日数・ステップ進捗バー）
     document.getElementById('d-ra-list').innerHTML = raItems.map(item=>{
@@ -5080,12 +5151,12 @@ function renderDisplay() {
       const diffDays = item.deadline
         ? Math.ceil((new Date(item.deadline)-new Date(today))/(86400000)) : null;
       const daysStr = item.done
-        ? '<span style="color:#128A3E">✓ '+item.doneDate+' '+T('raDone')+'</span>'
+        ? '<span style="color:'+TONE_COLOR.ok+'">✓ '+item.doneDate+' '+T('raDone')+'</span>'
         : diffDays !== null
           ? diffDays < 0
-            ? '<span style="color:var(--accent);font-weight:700">'+T('raOverdue')+(Math.abs(diffDays))+T('raDay')+'</span>'
+            ? '<span style="color:'+TONE_COLOR.danger+';font-weight:700">'+T('raOverdue')+(Math.abs(diffDays))+T('raDay')+'</span>'
             : diffDays <= 30
-              ? '<span style="color:var(--accent)">残 '+diffDays+'日</span>'
+              ? '<span style="color:'+TONE_COLOR.warn+';font-weight:700">残 '+diffDays+'日</span>'
               : '<span style="color:var(--sub)">'+T('raRemain')+diffDays+T('raDay')+'</span>'
           : '';
       const stepBars = RA_STEPS.map((_,i)=>{
@@ -5115,7 +5186,7 @@ function renderDisplay() {
         +'<div class="ra-step-body">'
         +'<div class="ra-step-title">'+s.title+'</div>'
         +'<div class="ra-step-desc">'+s.desc+'</div>'
-        +(onStep ? '<div style="font-size:14px;color:var(--gold);margin-top:3px;font-weight:700">▶ 現在実施中：'+onStep+'</div>' : '')
+        +(onStep ? '<div style="font-size:14px;color:'+TONE_COLOR.info+';margin-top:3px;font-weight:700">▶ 現在実施中：'+onStep+'</div>' : '')
         +'</div></div>';
     }).join('');
   }
@@ -5124,14 +5195,9 @@ function renderDisplay() {
   const accCases=(D.accidentCases||[]).filter(a=>a.desc);
   const tabsEl=document.getElementById('d-acc-tabs');
   if(tabsEl) {
-    tabsEl.innerHTML=accCases.map((a,i)=>`
-      <button onclick="selectAccCase(${i})" id="acc-tab-${i}"
-        style="padding:5px 16px;border-radius:4px;border:1px solid rgba(10,132,255,.4);
-               background:${i===0?'rgba(10,132,255,.2)':'rgba(0,0,0,.05)'};
-               color:${i===0?'#0B63CE':'var(--sub)'};cursor:pointer;font-size:16px;
-               font-family:inherit;font-weight:${i===0?700:400}">
-        事例${i+1}
-      </button>`).join('') || '<div style="font-size:16px;color:var(--sub)">事例データなし</div>';
+    tabsEl.setAttribute('role', 'tablist');
+    tabsEl.innerHTML=accCases.map((a,i)=>`<button type="button" role="tab" class="acc-tab" onclick="selectAccCase(${i})" id="acc-tab-${i}" aria-selected="${i===0}">事例${i+1}</button>`).join('')
+      || '<div style="font-size:16px;color:var(--sub)">事例データなし</div>';
     selectAccCase(0);
   }
 
@@ -6590,9 +6656,8 @@ function selectAccCase(idx) {
   accCases.forEach((_,i)=>{
     const t = document.getElementById('acc-tab-'+i);
     if(t) {
-      t.style.background = i===idx?'rgba(10,132,255,.2)':'rgba(0,0,0,.05)';
-      t.style.color      = i===idx?'#0B63CE':'var(--sub)';
-      t.style.fontWeight = i===idx?'700':'400';
+      t.classList.toggle('is-active', i===idx);
+      t.setAttribute('aria-selected', String(i===idx));
     }
   });
   const ac = accCases[idx]||{};
@@ -8707,7 +8772,7 @@ function renderForkPlanPdfBox() {
   if (!nameEl) return;
   const hasPdf = !!(D.forkPlan && D.forkPlan.pdfData);
   nameEl.textContent = hasPdf ? (D.forkPlan.pdfName || '登録済み') : 'PDF未登録';
-  nameEl.style.color = hasPdf ? '#128A3E' : 'var(--sub)';
+  nameEl.style.color = hasPdf ? 'var(--c-ok)' : 'var(--sub)';
   if (viewBtn) viewBtn.style.display = hasPdf ? 'block' : 'none';
   if (delBtn)  delBtn.style.display  = hasPdf ? 'block' : 'none';
 }
@@ -8956,8 +9021,8 @@ function renderPatrolSlide() {
     const latestRepIdx = reps.length - 1;
     lb.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-size:15px;font-weight:700;color:var(--accent);">📅 ${latest.date} 実施</div>
-        <div style="font-size:11px;color:var(--sub);">${latest.reporter||''} ${latest.area?'/ '+latest.area:''}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--c-info);">📅 ${latest.date} 実施</div>
+        <div class="patrol-sub">${latest.reporter||''} ${latest.area?'/ '+latest.area:''}</div>
       </div>
       ${Object.entries(cats).map(([cat, its]) => `
         <div class="plt-section-title">${cat}</div>
@@ -8969,32 +9034,28 @@ function renderPatrolSlide() {
             if (isDone) {
               // 改善済み：改善内容・写真を表示
               extra = `
-                <div style="margin-top:6px;padding:8px 10px;background:rgba(48,209,88,.08);border-radius:6px;border:1px solid rgba(48,209,88,.2);">
-                  <div style="font-size:11px;color:#128A3E;font-weight:700;margin-bottom:4px;">✅ 改善済 ${it.improvementDate?'('+it.improvementDate+')':''} ${it.improvementReporter?'/ '+it.improvementReporter:''}</div>
+                <div style="margin-top:6px;padding:8px 10px;background:var(--c-ok-bg);border-radius:6px;border:1px solid var(--c-ok-line);">
+                  <div class="patrol-done-title">✅ 改善済 ${it.improvementDate?'('+it.improvementDate+')':''} ${it.improvementReporter?'/ '+it.improvementReporter:''}</div>
                   ${it.improvementContent?`<div style="font-size:12px;color:rgba(0,0,0,.68);">${it.improvementContent}</div>`:''}
                   ${it.improvementPhotos?.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">${it.improvementPhotos.map(p=>`<img src="${p}" style="height:55px;border-radius:4px;object-fit:cover;border:1px solid rgba(48,209,88,.3);">`).join('')}</div>`:''}
                 </div>`;
             } else {
               // 未改善：改善報告ボタン
               extra = `
-                <button onclick="openImprovementModal(${latestRepIdx},${it._idx})"
-                  style="margin-top:5px;background:rgba(48,209,88,.12);border:1px solid rgba(48,209,88,.3);color:#128A3E;
-                         font-size:12px;font-weight:700;padding:5px 12px;border-radius:4px;cursor:pointer;font-family:inherit;">
-                  📸 改善報告を入力
-                </button>`;
+                <button type="button" class="plt-improve-btn" onclick="openImprovementModal(${latestRepIdx},${it._idx})">📸 改善報告を入力</button>`;
             }
           }
           return `
             <div class="plt-chk-item">
               <div class="plt-chk-badge ${it.result}">${it.result==='ok'?'✓':it.result==='ng'?'✗':'—'}</div>
               <div style="flex:1;">
-                <div>${it.item}${it.comment?`<span style="font-size:11px;color:var(--sub);margin-left:6px;">(${it.comment})</span>`:''}</div>
+                <div>${it.item}${it.comment?`<span class="patrol-sub" style="margin-left:6px;">(${it.comment})</span>`:''}</div>
                 ${extra}
               </div>
             </div>`;
         }).join('')}
       `).join('')}
-      ${latest.overall ? `<div style="font-size:12px;color:var(--sub);margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.055);">📝 ${latest.overall}</div>` : ''}
+      ${latest.overall ? `<div class="patrol-sub" style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.055);">📝 ${latest.overall}</div>` : ''}
       ${latest.photos&&latest.photos.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${latest.photos.map(p=>`<img src="${p}" style="height:60px;border-radius:5px;object-fit:cover;">`).join('')}</div>` : ''}`;
   } else {
     lb.innerHTML = '<div style="color:var(--sub);font-size:13px;">巡視記録がありません</div>';
@@ -9011,10 +9072,10 @@ function renderPatrolSlide() {
       <div class="patrol-hist-meta">${r.reporter||''} ${r.area?'/ '+r.area:''}</div>
       <div style="margin-top:4px;">
         ${ngItems.length ? ngItems.map(it => `
-          <span class="patrol-issue-tag ${it.resolved?'ok':''}" title="${it.resolved?'改善済':'未改善'}">
+          <span class="patrol-issue-tag${it.resolved?' ok':''}" title="${it.resolved?'改善済':'未改善'}">
             ${it.resolved?'✅ ':'⚠ '}${it.item.length>10?it.item.slice(0,10)+'…':it.item}
           </span>`).join('') : '<span class="patrol-issue-tag ok">異常なし</span>'}
-        ${ngItems.length?`<div style="font-size:11px;color:var(--sub);margin-top:3px;">改善 ${resolvedCnt}/${ngItems.length}件</div>`:''}
+        ${ngItems.length?`<div class="patrol-sub" style="margin-top:3px;">改善 ${resolvedCnt}/${ngItems.length}件</div>`:''}
       </div>
     </div>`;
   }).join('') : '<div style="color:var(--sub);font-size:13px;">記録なし</div>';
