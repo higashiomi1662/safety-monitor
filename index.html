@@ -1643,6 +1643,55 @@ body.mode-app #slides .org-box-name{ font-size:var(--fs-md); }
   }
   body.mode-app #slides .org-box-name{ font-size:var(--fs-md); }
 }
+
+/* ---------- 点検カード（設備点検の状況・始業前点検・月次点検）---------- */
+/* 異常は赤（両モード共通。以前は青だった） */
+.ic.ic-abnormal{ border-color:var(--c-danger-line) !important; box-shadow:0 0 8px rgba(180,35,24,.15); }
+.ic-comment{ color:var(--c-danger); background:var(--c-danger-bg); }
+body.mode-kiosk .ic-top{ display:contents; }
+/* 1列 → 2列（600px〜）→ 3列（1024px〜） */
+body.mode-app #slides #d-insp.insp-grid, body.mode-app #slides #d-daily-list.daily-list, body.mode-app #slides #d-monthly-insp.monthly-insp-grid{
+  display:grid; grid-template-columns:minmax(0, 1fr); gap:var(--sp-3); align-content:start; padding:0;
+}
+@media (min-width:600px){
+  body.mode-app #slides #d-insp.insp-grid, body.mode-app #slides #d-daily-list.daily-list, body.mode-app #slides #d-monthly-insp.monthly-insp-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width:1024px){
+  body.mode-app #slides #d-insp.insp-grid, body.mode-app #slides #d-daily-list.daily-list, body.mode-app #slides #d-monthly-insp.monthly-insp-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+}
+body.mode-app #slides #slide-daily .daily-layout{ grid-template-columns:minmax(0, 1fr); }
+body.mode-app #slides .insp-sum{ order:-1; margin:0; background:var(--c-surface) !important; border-radius:var(--r-lg); }
+body.mode-app #slides .sv-l{ font-size:var(--fs-sm); }
+/* カードの見た目 */
+body.mode-app #slides .ic, body.mode-app #slides .daily-item, body.mode-app #slides .mi-card{
+  display:flex; flex-direction:column; gap:10px; min-width:0; padding:var(--sp-4) 18px;
+  background:var(--c-surface) !important; border:1px solid var(--c-line) !important; border-radius:var(--r-lg);
+  box-shadow:none; opacity:1;
+}
+body.mode-app #slides .ic.is-danger, body.mode-app #slides .daily-item.is-danger, body.mode-app #slides .mi-card.is-danger{
+  border:2px solid var(--c-danger) !important;
+}
+body.mode-app #slides .ic-top, body.mode-app #slides .mi-card-head{ display:flex; align-items:center; gap:var(--sp-2); margin:0; }
+body.mode-app #slides .ic-icon{ font-size:20px; flex-shrink:0; }
+body.mode-app #slides .ic-name, body.mode-app #slides .mi-name, body.mode-app #slides .daily-item-name{ flex:1; min-width:0; font-size:18px; font-weight:700; line-height:1.35; }
+body.mode-app #slides .ic-chip, body.mode-app #slides .mi-chip, body.mode-app #slides .daily-item-chip{ flex-shrink:0; margin-left:auto; }
+body.mode-app #slides .ic-last, body.mode-app #slides .mi-meta, body.mode-app #slides .daily-item-meta{ font-size:var(--fs-sm); color:var(--c-sub); }
+body.mode-app #slides .ic-comment{ font-size:15px; padding:var(--sp-2) var(--sp-3); border-radius:var(--r-sm); }
+body.mode-app #slides .ic-legal-badge{ align-self:flex-start; padding:2px 10px; border-radius:var(--r-pill); }
+body.mode-app #slides .mi-cp-item{ font-size:var(--fs-sm); line-height:1.5; }
+body.mode-app #slides .mi-cp-dot{ width:10px; height:10px; }
+body.mode-app #slides .daily-item{ display:grid; grid-template-columns:minmax(0, 1fr) auto; align-items:start; gap:var(--sp-2) var(--sp-3); }
+body.mode-app #slides .daily-item-main{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+body.mode-app #slides .daily-item .ic-action{ grid-column:1 / -1; }
+.ic-action{
+  min-height:var(--tap); width:100%; margin-top:auto; padding:0 var(--sp-4);
+  border:0; border-radius:var(--r-md); background:var(--c-info); color:#fff;
+  font:inherit; font-size:var(--fs-md); font-weight:700; cursor:pointer;
+}
+.ic-action:hover{ background:#084A94; }
+/* 月初のお知らせ・進捗 */
+body.mode-app #slides #monthly-announce-banner{ border-radius:var(--r-lg); }
+body.mode-app #slides #monthly-progress-bar{ min-width:2px; }
 </style>
 <style id="app-ui">
 /* ===================================================================
@@ -2436,9 +2485,9 @@ body.mode-kiosk .tr-top{ margin-bottom:var(--sp-3); }
                 <div class="daily-rate-lbl" id="d-daily-rate-lbl">設備点検 完了率</div>
                 <div class="daily-rate-bar"><div class="daily-rate-fill" id="d-daily-rate-fill" style="width:0%;background:#128A3E"></div></div>
                 <div style="margin-top:12px;display:flex;gap:20px;text-align:center">
-                  <div><div id="d-daily-done" style="font-size:26px;font-weight:900;color:#128A3E">0</div><div id="d-lbl-done" style="font-size:14px;color:var(--sub)">実施済</div></div>
-                  <div><div id="d-daily-undone" style="font-size:26px;font-weight:900;color:rgba(0,0,0,.40)">0</div><div id="d-lbl-undone" style="font-size:14px;color:var(--sub)">未実施</div></div>
-                  <div><div id="d-daily-abn" style="font-size:26px;font-weight:900;color:var(--gold)">0</div><div id="d-lbl-abn" style="font-size:14px;color:var(--sub)">異常あり</div></div>
+                  <div><div id="d-daily-done" style="font-size:26px;font-weight:900;color:var(--c-ok)">0</div><div id="d-lbl-done" style="font-size:14px;color:var(--sub)">実施済</div></div>
+                  <div><div id="d-daily-undone" style="font-size:26px;font-weight:900;color:var(--c-neutral)">0</div><div id="d-lbl-undone" style="font-size:14px;color:var(--sub)">未実施</div></div>
+                  <div><div id="d-daily-abn" style="font-size:26px;font-weight:900;color:var(--c-danger)">0</div><div id="d-lbl-abn" style="font-size:14px;color:var(--sub)">異常あり</div></div>
                 </div>
               </div>
               <div class="daily-list-wrap">
@@ -4979,25 +5028,30 @@ function renderDisplay() {
         const lTxt = ld2<0?T('legalBadgeOver'):ld2<=30?T('legalBadgeRemain')+ld2+T('legalSoonDay'):T('legalBadgeOk');
         lBadge = `<div class="ic-legal-badge ${lCls}">📋 ${lTxt}</div>`;
       }
-      return `<div class="ic ${hasAbnormal?'ic-abnormal':''}">
-        <div class="ic-icon">${p.icon}</div>
-        <div class="ic-name">${p.name}</div>
-        <div class="ic-date">前回：${p.prev}</div>
+      // 通常表示：状態ラベル・最終点検・未実施なら「点検する」（掲示モードは従来の表示）
+      const st = inspChip(p, todayStr);
+      const hasLast = !!p.lastInspectedDate;
+      const last = inspLastText(p.lastInspectedDate || p.prev, hasLast ? p.reporter : '', hasLast ? p.dept : '');
+      return `<div class="ic ${hasAbnormal?'ic-abnormal':''} is-${st.tone}">
+        <div class="ic-top"><div class="ic-icon">${p.icon}</div><div class="ic-name">${p.name}</div><span class="ic-chip app-only">${chip(st.tone, st.label)}</span></div>
+        <div class="ic-date kiosk-only">前回：${p.prev}</div>
+        ${last ? `<div class="ic-last app-only">${planEsc(last)}</div>` : ''}
         ${lBadge}
         ${cps ? `<div class="ic-cps">${cps}</div>` : ''}
         ${hasAbnormal && p.comment ? `<div class="ic-comment">💬 ${p.comment}</div>` : ''}
         ${hasAbnormal && p.photo ? `<div class="ic-photo-thumb"><img src="${p.photo}" alt="異常写真"></div>` : ''}
-        <div class="badge ${p.status}">${sLabel[p.status]||p.status}</div>
+        <div class="badge ${p.status} kiosk-only">${sLabel[p.status]||p.status}</div>
+        ${st.needDaily ? inspActionBtn('daily') : ''}
       </div>`;
     }).join('')+
     `<div class="insp-sum">
-      <div class="sv"><div class="sv-n" style="color:#128A3E">${cnt.ok||0}</div><div class="sv-l">正常</div></div>
+      <div class="sv"><div class="sv-n" style="color:${TONE_COLOR.ok}">${cnt.ok||0}</div><div class="sv-l">正常</div></div>
       <div class="sdiv"></div>
-      <div class="sv"><div class="sv-n" style="color:var(--gold)">${cnt.warn||0}</div><div class="sv-l">要確認</div></div>
+      <div class="sv"><div class="sv-n" style="color:${TONE_COLOR.danger}">${cnt.warn||0}</div><div class="sv-l">要確認</div></div>
       <div class="sdiv"></div>
-      <div class="sv"><div class="sv-n" style="color:var(--accent)">${cnt.due||0}</div><div class="sv-l">点検期日</div></div>
+      <div class="sv"><div class="sv-n" style="color:${TONE_COLOR.danger}">${cnt.due||0}</div><div class="sv-l">点検期日</div></div>
       <div class="sdiv"></div>
-      <div class="sv"><div class="sv-n" style="color:var(--sub)">${D.inspections.length}</div><div class="sv-l">合計</div></div>
+      <div class="sv"><div class="sv-n" style="color:${TONE_COLOR.neutral}">${D.inspections.length}</div><div class="sv-l">合計</div></div>
     </div>`;
 
   // ── リスクアセスメント ──────────────────────────────────
@@ -6266,7 +6320,7 @@ function renderMonthlyInsp() {
   const targets = (D.inspections || []).filter(p => (p.monthlyCheckpoints||[]).length > 0);
 
   if (!targets.length) {
-    grid.innerHTML = '<div style="color:var(--sub);font-size:14px;padding:20px;">月次点検項目が設定されていません<br><small>管理画面 → 設備点検 → 月次点検項目 に内容を入力してください</small></div>';
+    grid.innerHTML = '<div class="empty" style="font-size:14px;padding:20px;">月次点検項目が設定されていません<br>管理画面 → 設備点検 → 月次点検項目 に内容を入力してください</div>';
     return;
   }
 
@@ -6285,7 +6339,7 @@ function renderMonthlyInsp() {
   if (progressEl) {
     const pct = targets.length ? Math.round(doneCount / targets.length * 100) : 0;
     progressEl.style.width = pct + '%';
-    progressEl.style.background = pct === 100 ? '#128A3E' : pct >= 50 ? '#B45309' : '#0B63CE';
+    progressEl.style.background = TONE_COLOR[rateLevel(pct, 100, 50)];
     if (progressTxt) progressTxt.textContent = doneCount + ' / ' + targets.length + ' 実施済（' + pct + '%）';
   }
 
@@ -6315,16 +6369,22 @@ function renderMonthlyInsp() {
     }).join('');
 
     const reporterTxt = (doneThisMonth && p.reporter)
-      ? `<div class="mi-reporter">👤 ${p.reporter}${p.dept?' / '+p.dept:''}　📅 ${p.lastInspectedDate}</div>`
-      : (!doneThisMonth ? `<div class="mi-reporter" style="color:rgba(0,0,0,.16);">今月未実施</div>` : '');
+      ? `<div class="mi-reporter kiosk-only">👤 ${p.reporter}${p.dept?' / '+p.dept:''}　📅 ${p.lastInspectedDate}</div>`
+      : (!doneThisMonth ? `<div class="mi-reporter kiosk-only" style="color:rgba(0,0,0,.16);">今月未実施</div>` : '');
+    // 通常表示：状態ラベル・最終点検・未実施なら「点検する」
+    const [tone, label] = !doneThisMonth ? ['neutral', '未実施'] : hasNg ? ['danger', '異常あり'] : ['ok', '実施済'];
+    const meta = doneThisMonth ? inspLastText(p.lastInspectedDate, p.reporter, p.dept) : '今月はまだ点検されていません';
 
-    return `<div class="mi-card ${cardCls}">
+    return `<div class="mi-card ${cardCls} is-${tone}">
       <div class="mi-card-head">
         <div class="mi-name">${p.icon||'🔧'} ${p.name}</div>
-        <div class="mi-badge ${badgeCls}">${badgeTxt}</div>
+        <div class="mi-badge ${badgeCls} kiosk-only">${badgeTxt}</div>
+        <span class="mi-chip app-only">${chip(tone, label)}</span>
       </div>
+      <div class="mi-meta app-only">${planEsc(meta)}</div>
       <div class="mi-cp-list">${cpRows}</div>
       ${reporterTxt}
+      ${!doneThisMonth ? inspActionBtn('monthly') : ''}
     </div>`;
   }).join('');
 }
@@ -8311,20 +8371,46 @@ function currentMonthPlan(data, now = new Date()) {
     .map(it => ({ name: it.name, done: !!(it.result || [])[idx] }));
 }
 
+// ===================== 点検カードの共通部品（設備点検・始業前・月次）=====================
+// 「最終点検 10月16日・山田 太郎（製造部）」
+function inspLastText(date, reporter, dept) {
+  if (!date) return '';
+  return '最終点検 ' + fmtMonthDay(date) + (reporter ? '・' + reporter + (dept ? '（' + dept + '）' : '') : '');
+}
+// 未実施の設備に出す「点検する」ボタン（type: daily / monthly）
+function inspActionBtn(type) {
+  return '<button type="button" class="ic-action app-only" onclick="openInspSelect(\'' + type + '\')">点検する</button>';
+}
+// 設備の状態ラベル：異常・期日超過は危険（赤）、今日の始業前点検の実施済／未実施
+function inspChip(p, today = localDateStr()) {
+  const daily = computeDailyStatus([p], today).items[0];
+  const needDaily = !!(daily && !daily.inspectedToday);
+  if (p.status === 'warn' || (daily && daily.isAbn)) return { tone: 'danger', label: '異常あり', needDaily };
+  if (p.status === 'due') return { tone: 'danger', label: '期日超過', needDaily };
+  if (!daily) return { tone: 'ok', label: '正常', needDaily };
+  return daily.inspectedToday ? { tone: 'ok', label: '実施済', needDaily } : { tone: 'neutral', label: '未実施', needDaily };
+}
+
 function renderDailyList() {
   const st = computeDailyStatus(D.inspections, localDateStr());
   const { done, undone, abn } = st;
   const rows = st.items.map(({ p, inspectedToday, isAbn }) => {
-    const cls = !inspectedToday ? 'undone' : isAbn ? 'done' : 'done';
+    const cls = !inspectedToday ? 'undone' : 'done';
     const badge = !inspectedToday
-      ? '<span class="daily-item-badge d-undone">'+T('undone')+'</span>'
+      ? '<span class="daily-item-badge d-undone kiosk-only">'+T('undone')+'</span>'
       : isAbn
-        ? '<span class="daily-item-badge d-abn">⚠ '+T('abnormal')+'</span>'
-        : '<span class="daily-item-badge d-done">✓ '+T('done')+'</span>';
-    const who = p.reporter ? `<span class="daily-item-who">${p.reporter}${p.dept?' / '+p.dept:''}</span>` : '';
-    return `<div class="daily-item ${cls}">
-      <div><div class="daily-item-name">${p.icon} ${p.name}</div>${who}</div>
+        ? '<span class="daily-item-badge d-abn kiosk-only">⚠ '+T('abnormal')+'</span>'
+        : '<span class="daily-item-badge d-done kiosk-only">✓ '+T('done')+'</span>';
+    const who = p.reporter ? `<span class="daily-item-who kiosk-only">${p.reporter}${p.dept?' / '+p.dept:''}</span>` : '';
+    // 通常表示：状態ラベル・最終点検・未実施なら「点検する」
+    const [tone, label] = !inspectedToday ? ['neutral', '未実施'] : isAbn ? ['danger', '異常あり'] : ['ok', '実施済'];
+    const hasLast = !!p.lastInspectedDate;
+    const last = inspLastText(p.lastInspectedDate || p.prev, hasLast ? p.reporter : '', hasLast ? p.dept : '');
+    return `<div class="daily-item ${cls} is-${tone}">
+      <div class="daily-item-main"><div class="daily-item-name">${p.icon} ${p.name}</div>${who}${last ? `<div class="daily-item-meta app-only">${planEsc(last)}</div>` : ''}</div>
       ${badge}
+      <span class="daily-item-chip app-only">${chip(tone, label)}</span>
+      ${!inspectedToday ? inspActionBtn('daily') : ''}
     </div>`;
   }).join('');
   const rate = st.rate;

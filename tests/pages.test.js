@@ -342,3 +342,82 @@ describe('組織図ページ', () => {
     expect(phone).toMatch(/border-left:2px solid/)
   })
 })
+
+// ===================== 設備点検・始業前点検・月次点検 =====================
+const NOW = '2026-10-16T09:00:00+09:00'
+const inspections = () => [
+  { name: 'クレーン①', icon: '🏗', prev: '2026/10/01', status: 'ok', dailyCheckpoints: ['a'], monthlyCheckpoints: ['m1', 'm2'],
+    lastInspectedDate: '2026-10-16', lastInspType: 'daily', lastDailyCpState: ['ok'], reporter: '山田 太郎', dept: '製造部' },
+  { name: 'プレス機', icon: '⚙', prev: '2026/10/01', status: 'warn', comment: '非常停止の反応が遅い', dailyCheckpoints: ['a'],
+    monthlyCheckpoints: ['m1'], lastInspectedDate: '2026-10-16', lastInspType: 'daily', lastDailyCpState: ['ng'], reporter: '佐藤 花子' },
+  { name: '切断機①', icon: '🔪', prev: '2026/10/15', status: 'ok', dailyCheckpoints: ['a'], monthlyCheckpoints: ['m1'],
+    lastInspectedDate: '2026-10-15', lastInspType: 'daily' },
+]
+const chipOf = (el) => {
+  const c = el.querySelector('.chip')
+  return c ? `${c.className.replace('chip ', '')}:${c.textContent}` : null
+}
+
+describe('設備点検の状況ページ', () => {
+  it('カードに状態ラベル・最終点検日と点検者・未実施なら「点検する」ボタンを出す', () => {
+    app = loadApp({ now: NOW })
+    const { win, doc } = app
+    win.D.inspections = inspections()
+    win.D.legalInsp = []
+    win.renderDisplay()
+    const cards = [...doc.querySelectorAll('#d-insp .ic')]
+    expect(cards.map(chipOf)).toEqual(['tone-ok:実施済', 'tone-danger:異常あり', 'tone-neutral:未実施'])
+    expect(cards[0].querySelector('.ic-last').textContent).toBe('最終点検 10月16日・山田 太郎（製造部）')
+    expect(cards[2].querySelector('.ic-last').textContent).toBe('最終点検 10月15日')
+    expect(cards[0].querySelector('.ic-action')).toBeNull()
+    const btn = cards[2].querySelector('.ic-action')
+    expect(btn.textContent).toBe('点検する')
+    expect(btn.getAttribute('onclick')).toBe("openInspSelect('daily')")
+    // 危険の意味で青（--accent）や黄（--gold）を使わない
+    expect(doc.getElementById('d-insp').innerHTML).not.toMatch(/var\(--accent\)|var\(--gold\)|#128A3E/)
+  })
+
+  it('カードの列は 1列 → 2列（600px〜）→ 3列（1024px〜）', () => {
+    app = loadApp()
+    const css = app.doc.getElementById('ui-pages').textContent
+    const sec = css.slice(css.indexOf('/* ---------- 点検カード'))
+    expect(sec).toMatch(/@media \(min-width:600px\)\{[^}]*\.insp-grid[^}]*repeat\(2,/)
+    expect(sec).toMatch(/@media \(min-width:1024px\)\{[^}]*\.insp-grid[^}]*repeat\(3,/)
+  })
+})
+
+describe('始業前点検ページ', () => {
+  it('一覧のカードに状態ラベルと最終点検、未実施には「点検する」ボタン', () => {
+    app = loadApp({ now: NOW })
+    const { win, doc } = app
+    win.D.inspections = inspections()
+    win.renderDailyList()
+    const items = [...doc.querySelectorAll('#d-daily-list .daily-item')]
+    expect(items.map(chipOf)).toEqual(['tone-ok:実施済', 'tone-danger:異常あり', 'tone-neutral:未実施'])
+    expect(items[2].querySelector('.daily-item-meta').textContent).toBe('最終点検 10月15日')
+    expect(items[2].querySelector('.ic-action').getAttribute('onclick')).toBe("openInspSelect('daily')")
+    expect(items[0].querySelector('.ic-action')).toBeNull()
+    expect(doc.getElementById('d-daily-abn').style.color).toBe('var(--c-danger)')
+    expect(doc.getElementById('d-daily-done').style.color).toBe('var(--c-ok)')
+  })
+})
+
+describe('月次点検ページ', () => {
+  it('進捗バーの色はトークン、カードに状態ラベル、未実施には「点検する」（月次）', () => {
+    app = loadApp({ now: NOW })
+    const { win, doc } = app
+    const list = inspections()
+    list[0] = { ...list[0], lastInspectedDate: '2026-10-05', lastInspType: 'monthly', lastMonthlyCpState: ['ok', 'ok'] }
+    list[1] = { ...list[1], lastInspectedDate: '2026-10-06', lastInspType: 'monthly', lastMonthlyCpState: ['ng'] }
+    win.D.inspections = list
+    win.renderMonthlyInsp()
+    expect(doc.getElementById('monthly-progress-bar').style.background).toBe('var(--c-warn)')
+    const cards = [...doc.querySelectorAll('#d-monthly-insp .mi-card')]
+    expect(cards.map(chipOf)).toEqual(['tone-ok:実施済', 'tone-danger:異常あり', 'tone-neutral:未実施'])
+    expect(cards[0].querySelector('.mi-meta').textContent).toBe('最終点検 10月5日・山田 太郎（製造部）')
+    expect(cards[2].querySelector('.ic-action').getAttribute('onclick')).toBe("openInspSelect('monthly')")
+    expect(cards[0].querySelector('.ic-action')).toBeNull()
+    expect(win.renderMonthlyInsp.toString()).not.toMatch(/#128A3E|#B45309|#0B63CE/)
+    expect(doc.getElementById('d-monthly-insp').innerHTML).not.toMatch(SMALL_FONT)
+  })
+})
